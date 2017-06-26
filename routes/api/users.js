@@ -3,7 +3,6 @@ var router = express.Router();
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var path = require("path");
-var userUploadsPath = path.resolve(__dirname, "user_uploads");
 var User = require('../../models/user');
 
 var apiController = require('../../controllers/apiController');
@@ -53,13 +52,11 @@ passport.use(new LocalStrategy(
 
 passport.serializeUser(function(user, done) {
 	// saves user in req
-	console.log("serializeUser: "+user);
 	done(null, user.id);
 
 });
 
 passport.deserializeUser(function(id, done) {
-	console.log("deserializeUser: "+id);
 	User.getUserById(id, function(err, user) {
 		done(err, user);
 	});
@@ -75,9 +72,7 @@ router.post('/signin',
 
 function ensureUniqueUsername(req, res, next) {
 	var username = req.newUser.username;
-	console.log("username: "+username)
 	User.getUserbyUsername(username, function(err, findRes) {
-		console.log("user find res: "+findRes)
 		if(findRes!=null) {
 			res.status(400).json({
 				success: false,
@@ -93,7 +88,6 @@ function ensureUniqueUsername(req, res, next) {
 function ensureUniqueEmail(req, res, next) {
 	var email = req.newUser.email;
 	User.findOne({email: email}, function(err, findRes) {
-		console.log("find res email: "+findRes)
 		if(findRes!=null) {
 			res.status(400).json({
 				success: false,
@@ -106,19 +100,9 @@ function ensureUniqueEmail(req, res, next) {
 
 }
 
-// router.use(ensureAuthenticated);
-
-router.post('/login',
-	passport.authenticate('local',
-	{successRedirect: '/api/user/loginSuccess', failureRedirect: '/api/user/loginFail'})
-);
-
 router.get('/loginSuccess', function(req, res) {
-	console.log("success");
-	console.log("auth: "+req.isAuthenticated());
 	req.user.password = "";
 	req.user.verificationCode = "";
-	console.log("users in backend: "+req.user);
 	if(req.isAuthenticated()) {
 		var token = jwt.sign({
 		  user: req.user
@@ -253,13 +237,12 @@ function createNewUser(req, res, next) {
 }
 
 // info required: useername, email, password, confirmpassowrd
-
 router.post('/signup', validateErrors, appendNewUserObj,
 	ensureUniqueUsername, ensureUniqueEmail, createNewUser, function(req, res) {
 	res.json({
 		success: true,
 		msg: 'You signed up successfully! Please, check and verify your email.',
-	}, status=200);
+	}).status(200);
 	
 });
 
