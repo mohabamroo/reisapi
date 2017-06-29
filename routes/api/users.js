@@ -254,56 +254,50 @@ router.get('/getStatus', function(req, res) {
 
 });
 
-// edit profile
-router.get('/profile/:id', ensureAuthenticatedApi, function(req, res) {
-	if(req.isAuthenticated() && req.user.id == req.params.id) {
-		res.json({
-			success: true,
-			data: req.user,
-		});
-	} else {
-		res.json({
-			success: false,
-			msg: 'You are not logged to edit your profile.'
-		});
-	}
-
-});
-
+// use the new token!
+// error validation?
 router.post('/saveChanges', ensureAuthenticatedApi, function(req, res) {
-	var phone = req.body.user.phone;
-	var email = req.body.user.email;
-	var summary = req.body.user.userDesc;
-	var birthdate = req.body.user.birthdate;
-	var gender = req.body.user.gender;
-	var oldTags = req.body.user.tags;
-	var tagsArr = req.body.tags.split(', ');
-	var newTags = oldTags.concat(tagsArr);
-	newTags = newTags.filter(function(elem, index, self) {
-	    return index == self.indexOf(elem);
-	});
-	User.findOneAndUpdate(
-	  {_id: req.decoded.user._id},
-	  { $set: 
-			{	phone: phone,
-				email: email,
-				summary: summary,
-				year: year,
-				major: major,
-				birthdate: birthdate,
-				gender: gender,
-				tags: newTags
-			}}, {new: true}, function(err, updatedUser) {
-				printError(err, req, res);
-				if(req.body.tags!="")
-					addTags(req, res, oldTags, function() {
-						console.log("hnady new token");
+	// var oldTags = req.body.user.tags;
+	// var tagsArr = req.body.tags.split(', ');
+	// var newTags = oldTags.concat(tagsArr);
+	// newTags = newTags.filter(function(elem, index, self) {
+	//     return index == self.indexOf(elem);
+	// });
+	User.findById(req.decoded.user._id, function(err, user) {
+		var phone = req.body.phone || user.phone;
+		var bio = req.body.bio || user.bio;
+		var first_name = req.body.first_name || user.first_name;
+		var location = req.body.location || user.location;
+		var last_name = req.body.last_name || user.last_name;
+		var birthdate = req.body.birthdate || user.birthdate;
+		var home_city = req.body.home_city || user.home_city;
+		var current_city = req.body.current_city || user.current_city;
+		// how about adding languages?
+		var gender = req.body.gender || user.gender;
+		User.findOneAndUpdate(
+		  {_id: req.decoded.user._id},
+		  { $set: 
+				{	phone: phone,
+					summary: summary,
+					birthdate: birthdate,
+					gender: gender,
+					bio: bio,
+					first_name: first_name,
+					last_name: last_name,
+					home_city: home_city,
+					current_city: current_city,
+					// tags: newTags
+				}}, {new: true}, function(err, updatedUser) {
+					printError(err, req, res);
+					if(req.body.tags!=null&&req.body.tags!="")
+						addTags(req, res, oldTags, function() {
+							newtoken(res, updatedUser);
+						});
+					else
 						newtoken(res, updatedUser);
-					});
-				else
-					newtoken(res, updatedUser);
-			}
-	);
+				}
+		);
+	})
 
 });
 
@@ -391,27 +385,32 @@ router.post('/deleteTags', ensureAuthenticatedApi, deleteTags, function(req, res
 
 });
 
-router.get('/viewprofile/:id', function(req,res) {
-	User.getUserById(req.params.id, function(err, resuser) {
-		printError(err, req, res);
+// authenticated?
+router.get('/profile/:username', function(req,res) {
+	User.findOne({username: req.params.username}, {password:0, verificationCode:0, _id:0},
+	function(err, resuser) {
+	    if(!resuser) {
+	    	res.status(400).json({
+	    		success: false,
+	    		errors: [{"msg":"User doesn't exist."}]
+	    	});
+	    	return;
+	    }
 		var Bdate = resuser.birthdate;
 	    var Bday = +new Date(Bdate);
 	    var Q4A = ~~ ((Date.now() - Bday) / (31557600000));
 	    var dude = resuser;
 	    dude.age = Q4A;
-		if(resuser.usertype=="student") {
-			res.json({
+		if(resuser.public==true) {
+			res.status(200).json({
 				success: true,
 				data: dude
 			});
 		} else {
-			if(resuser.usertype=="club") {
-				res.redirect('/clubs/viewClub/'+req.params.id);
-			} else {
-				if(resuser.usertype==="admin") {
-					res.redirect('/users/admin');
-				}
-			}
+			res.status(403).json({
+				success: false,
+				errors: [{"msg":"Private profile."}]
+			});
 		}				
 	});
     

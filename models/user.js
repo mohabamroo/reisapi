@@ -12,18 +12,17 @@ var userSchema = mongoose.Schema({
 	password: {
 		type: String
 	},
+	public: {type: Boolean, default: true},
 	birthdate: {
 		type: String
 	},
-	gender: {
+	location: {
 		type: String
 	},
-	usertype: {
-		type: String
-	},
-	name: {
-		type: String
-	},
+	gender: String,
+	usertype: String,
+	first_name: String,
+	last_name: String,
 	email: {
 		type: mongoose.SchemaTypes.Email
 	},
@@ -38,7 +37,7 @@ var userSchema = mongoose.Schema({
 			}
 		}
 	],
-	summary: {
+	bio: {
 		type: String
 	},
 	profilephoto: {
@@ -54,7 +53,10 @@ var userSchema = mongoose.Schema({
 		{
 			type: String
 		}
-	]
+	],
+	home_city: String,
+	current_city: String,
+	languages: String
 
 });
 

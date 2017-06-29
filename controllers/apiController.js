@@ -51,7 +51,7 @@ module.exports.ensureAuthenticatedApi = function(req, res, next) {
 			}
 		});
 	} else {
-		res.json({success: false, msg: "No token provided!"});
+		res.status(401).json({success: false, msg: "No token provided!"});
 	}
 }
 
