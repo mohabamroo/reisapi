@@ -30,6 +30,8 @@ function printError(err, req, res) {
 			errors: [err]
 		}).status(400);
 		return true;
+	} else {
+		return false;
 	}
 }
 module.exports.printError = printError;
@@ -54,6 +56,24 @@ module.exports.ensureAuthenticatedApi = function(req, res, next) {
 		res.status(401).json({success: false, msg: "No token provided!"});
 	}
 }
+
+function appendAuth(req, res, next) {
+	var token = req.body.token || req.body.query || req.headers['x-access-token'];
+	if(token) {
+		jwt.verify(token, 'ghostrider', function(err, decoded) {
+			if(err)
+				res.json({success: false, msg: "Error decoding your token!"});
+			else {
+				req.decoded = decoded;
+				next();
+			}
+		});
+	} else {
+		next();
+	}
+}
+
+module.exports.appendAuth = appendAuth;
 
 module.exports.uniqueName = function(req, filename) {
 	var arr = filename.split(".");
@@ -87,3 +107,19 @@ module.exports.newtoken = function(res, updatedUser) {
 		msg: "Updated profile!"
 	});
 }
+
+module.exports.validateErrors = function(req, res, next) {
+	errors = req.validationErrors();
+	if(errors) {
+		errors.forEach(function(error) {
+			printError(error, req, res);
+		});
+		res.json({
+			success: false,
+			msg: "Please try again",
+			data: errors
+		});
+	} else
+		next();
+}
+

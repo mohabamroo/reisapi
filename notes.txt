@@ -1,0 +1,7 @@
+posts/update/:id
+
+posts/delete/:id
+
+posts/create
+
+posts/:id

@@ -2,7 +2,6 @@ var express = require('express');
 var router = express.Router();
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
-var path = require("path");
 var User = require('../../models/user');
 
 var apiController = require('../../controllers/apiController');
@@ -10,12 +9,7 @@ var multer  = require('multer');
 var mailer = require('express-mailer');
 var app = require('../../app.js');
 var randomstring = require("randomstring");
-var storagetype = "screenshot";
-var FileReader = require('filereader')
-var Busboy = require('busboy');
 var jwt = require('jsonwebtoken');
-var inspect = require('util').inspect;
-var fs = require('fs');
 var profilephotoUpload = multer().single('profilePhoto');
 
 var printError = apiController.printError;
@@ -65,7 +59,7 @@ passport.deserializeUser(function(id, done) {
 
 router.post('/signin',
 	passport.authenticate('local',
-		{session: true, successRedirect: '/api/user/loginSuccess', failureRedirect: '/api/user/loginFail'}),
+		{session: true, successRedirect: '/api/users/loginSuccess', failureRedirect: '/api/users/loginFail'}),
 	function(req, res, next) {
 	}
 );
@@ -209,7 +203,7 @@ function createNewUser(req, res, next) {
 			res.status(400).json({
 				success: false,
 				errors: [err]
-			})
+			});
 		} else {
 			var host = req.get('host');
 			var link = "http://"+req.get('host')+"/users/verify/"+newUser.id+"/"+rand;
