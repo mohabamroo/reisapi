@@ -9,6 +9,7 @@ var userSchema = mongoose.Schema({
 		unique: true,
 		required: true
 	},
+	name: String,
 	password: {
 		type: String
 	},
@@ -17,12 +18,11 @@ var userSchema = mongoose.Schema({
 		type: String
 	},
 	location: {
-		type: String
+		lat: String,
+		lng: String
 	},
 	gender: String,
 	usertype: String,
-	first_name: String,
-	last_name: String,
 	email: {
 		type: mongoose.SchemaTypes.Email
 	},

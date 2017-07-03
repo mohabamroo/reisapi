@@ -168,25 +168,23 @@ function validateErrors(req, res, next) {
 }
 
 function appendNewUserObj(req, res, next) {
-	// var name = req.body.newUser.name;
-	var email = req.body.email;
-	var password = req.body.password;
 	var username = req.body.username;
-	// var birthdate = req.body.newUser.birthdate;
-	// var phone = req.body.newUser.phone || "No number";
+	var password = req.body.password;
+	var email = req.body.email;
+	var name = req.body.name;
+	var birthdate = req.body.newUser.birthdate;
 	var rand = randomstring.generate();
 	req.rand = rand;
 	var newUser = new User({
-		// name: name,
+		name: name,
 		email: email,
 		username: username,
 		password: password,
-		// usertype: type,
-		// birthdate: birthdate,
-		summary: "No summary", 
+		usertype: 'normal',
+		birthdate: birthdate,
+		bio: "No bio", 
 		phone: "No phone",
 		profilephoto: "http://s3-api.us-geo.objectstorage.softlayer.net/users-images/default-photo.jpeg",
-		organizations: [],
 		verificationCode: rand,
 		stickers: [],
 	});
@@ -250,29 +248,26 @@ router.get('/getStatus', function(req, res) {
 
 // use the new token!
 // error validation?
-router.post('/saveChanges', ensureAuthenticatedApi, function(req, res) {
-	// var oldTags = req.body.user.tags;
-	// var tagsArr = req.body.tags.split(', ');
-	// var newTags = oldTags.concat(tagsArr);
-	// newTags = newTags.filter(function(elem, index, self) {
-	//     return index == self.indexOf(elem);
-	// });
+router.post('/update', ensureAuthenticatedApi, function(req, res) {
 	User.findById(req.decoded.user._id, function(err, user) {
 		var phone = req.body.phone || user.phone;
 		var bio = req.body.bio || user.bio;
+		var public = req.body.public || user.public;
 		var first_name = req.body.first_name || user.first_name;
 		var location = req.body.location || user.location;
 		var last_name = req.body.last_name || user.last_name;
 		var birthdate = req.body.birthdate || user.birthdate;
 		var home_city = req.body.home_city || user.home_city;
 		var current_city = req.body.current_city || user.current_city;
-		// how about adding languages?
+		var profilephoto = req.body.profilephoto || user.profilephoto;
+		var languages = req.body.languages || user.languages;
 		var gender = req.body.gender || user.gender;
+		var lat = req.body.lat || user.location.lat;
+		var lng = req.body.lng || user.location.lng;
 		User.findOneAndUpdate(
 		  {_id: req.decoded.user._id},
 		  { $set: 
 				{	phone: phone,
-					summary: summary,
 					birthdate: birthdate,
 					gender: gender,
 					bio: bio,
@@ -280,7 +275,10 @@ router.post('/saveChanges', ensureAuthenticatedApi, function(req, res) {
 					last_name: last_name,
 					home_city: home_city,
 					current_city: current_city,
-					// tags: newTags
+					languages: languages,
+					public: public,
+					profilephoto: profilephoto,
+					location: {lat: lat, lng: lng}
 				}}, {new: true}, function(err, updatedUser) {
 					printError(err, req, res);
 					if(req.body.tags!=null&&req.body.tags!="")
@@ -292,90 +290,6 @@ router.post('/saveChanges', ensureAuthenticatedApi, function(req, res) {
 				}
 		);
 	})
-
-});
-
-function addTags(req, res, oldTags, next) {
-	if(req.body.tags!="") {
-		var tagsStr = req.body.tags;
-		var tagsArr = tagsStr.split(', ');
-		User.getUserbyUsername(req.body.user.username, function(err, user) {
-			var oldTags = user.tags;
-			tagsArr.forEach(function(tag) {
-				var userToAdd = {name: user.username, profileid: user.id, photo: user.profilephoto};
-				Tag.getTagbyTagname(tag, function(err2, tagres) {
-					console.log("tag res: "+tagres);
-					if(tagres!=null) {
-						if(tagres.users.length>0)
-						var userFound = tagres.users.filter(function(item) {
-							return item.profileid == user.id;
-						});
-						console.log("userFound: "+userFound);
-						Tag.update({_id: tagres.id}, {$push: {users: userToAdd}}, function(errpush, pushRes) {
-							printError(errpush, req, res);
-							printResult(pushRes);
-							next();
-						});
-					} else {
-						var newTag = new Tag({tag: tag, users: [userToAdd]});
-						Tag.createTag(newTag, function(err3, resnewtag) {
-							printError(err3, req, res);
-							printResult(resnewtag);
-							next();
-							
-						});
-					}
-				});
-				
-			});
-		});	
-	} else
-		next();
-}
-
-function deleteTags(req, res, next) {
-	console.log("deleteTags");
-	var limit = req.decoded.user.tags.length;
-	console.log("limit: "+limit);
-	var index = 0;
-	req.decoded.user.tags.forEach(function(tagname) {
-		console.log(tagname);
-		Tag.findOneAndUpdate(
-		    {tag: tagname}, 
-		    { $pull: { "users" : { profileid: req.decoded.user._id } } }, {new: true},
-			function(err, updateRes) {
-				printError(err, req, res);
-				printResult(updateRes);
-				if(updateRes.users.length==0) {
-					Tag.remove({_id: updateRes._id}, function(err, removeRes) {
-						printError(err, req, res);
-						printResult(removeRes);
-					});
-				}
-				index++;
-				if(limit==(index))
-					next();
-			}
-		);
-
-	});
-}
-
-// NOTE: delete user from Tag document
-router.post('/deleteTags', ensureAuthenticatedApi, deleteTags, function(req, res) {
-	var token;
-	User.findOneAndUpdate({_id: req.decoded.user._id}, {$set: {"tags": []}}, {new: true}, function(err1, updatedUser) {
-		printError(err1, req, res);
-		printResult(updatedUser.tags);
-		token = jwt.sign({
-		  user: updatedUser
-		}, 'ghostrider', { expiresIn: '1000h'});
-		res.json({
-			success: true,
-			msg: "Deleted tags!",
-			token: token
-		});
-	});
 
 });
 
@@ -411,52 +325,4 @@ router.get('/profile/:username', function(req,res) {
 });
 
 
-router.post('/updateProfilePhoto', ensureAuthenticatedApi, profilephotoUpload, function(req, res) {
-    var file = req.file;
-    console.log("file: "+file);
-    if(!file) {
-		res.status(400).json({
-			success: false,
-			msg: "No file attached",
-			errors: [{"msg": "No file attached."}]
-		});
-    }
-	var newfilename = uniqueName(req, file.originalname);
-	console.log(newfilename)
-	var bucketName = "users-images";
-	var data = {
-		Bucket: bucketName,
-		Key: newfilename,
-		Body: file.buffer,
-		ACL: "public-read"
-	};
-	console.log(data)
-	clientS3.putObject(data, function(err, data) {
-		printError(err, req, res);
-		var url = "http://s3-api.us-geo.objectstorage.softlayer.net/";
-		url += bucketName + "/" + newfilename;
-		console.log(url);
-		console.log(req.decoded.user._id);
-		User.findOneAndUpdate({_id: req.decoded.user._id}, {$set: {profilephoto: url}}, function(err, updatedUser) {
-			console.log(updatedUser);
-			if(err) {
-				res.status(500).json({
-					success: false,
-					errros: [err]
-				});
-			} else {
-				var token = jwt.sign({
-				  user: updatedUser
-				}, 'ghostrider', { expiresIn: '1000h'});
-				res.status(200).json({
-					success: true,
-					msg: "File uploaded!",
-					token: token
-				});
-			}
-			
-		});
-	});
-
-});
 module.exports = router;
