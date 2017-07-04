@@ -172,7 +172,7 @@ function appendNewUserObj(req, res, next) {
 	var password = req.body.password;
 	var email = req.body.email;
 	var name = req.body.name;
-	var birthdate = req.body.newUser.birthdate;
+	var birthdate = req.body.birthdate;
 	var rand = randomstring.generate();
 	req.rand = rand;
 	var newUser = new User({
