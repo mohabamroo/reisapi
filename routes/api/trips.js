@@ -21,30 +21,30 @@ var newtoken = apiController.newtoken;
 var validateErrors = apiController.validateErrors;
 var appendAuth = apiController.appendAuth;
 
-function validateAlbum(req, res, next) {
+function validateTrip(req, res, next) {
 	req.checkBody('title', 'No title provided!').notEmpty();
 	validateErrors(req, res, next);
 }
 
-function createAlbum(req, res, next) {
-	var newAlbum = new Album({
+function createTrip(req, res, next) {
+	var newTrip = new Album({
 		user: req.decoded.user._id,
 		title: req.body.title,
 		public: req.body.public || true,
-		posts: req.body.posts || []
+		albums: req.body.albums || []
 	});
 	newAlbum.save(function(err, album) {
 		if(!printError(err, req, res)) {
-			req.album = album;
+			req.trip = trip;
 			next();
 		}
 	});
 }
 
-router.post('/create', ensureAuthenticatedApi, validateAlbum, createAlbum, validatePosts, addPosts, function(req, res) {
+router.post('/create', ensureAuthenticatedApi, validateTrip, createTrip, validateAlbums, addAlbums, function(req, res) {
 	res.status(200).json({
 		success: true,
-		data: req.album
+		data: req.trip
 	});
 });
 
@@ -116,33 +116,32 @@ function validatePostsNotEmpty(req, res, next) {
 	validateErrors(req, res, next);
 }
 
-function validatePosts(req, res, next) {
-	posts = req.body.posts;
-	if(!Array.isArray(posts)) {
-		posts = [posts];
+function validateAlbums(req, res, next) {
+	albums = req.body.trips;
+	if(!Array.isArray(trips)) {
+		trips = [trips];
 	}
-	var limit =  posts.length;
+	var limit =  trips.length;
 	var i = 0;
-	posts.forEach(function(postId) {
-		if(req.album.posts.indexOf(postId) >= 0) {
+	trips.forEach(function(albumId) {
+		if(req.trip.albums.indexOf(albumId) >= 0) {
 			res.status(400).json({
 				success: false,
-				errors: [{"msg":"Duplicate posts in album."}]
+				errors: [{"msg":"Duplicate albums in trip."}]
 			});
 			return;
 		}
-		Post.findById(postId, function(err, postRes) {
+		Album.findById(albumId, function(err, albumRes) {
 			if(req.error==true) {
 				// returned error before, don't do anything
 				return;
 			}
-			if(!err && postRes!=null) {
-				// verify ownership
-				if(postRes.user!=req.decoded.user._id) {
+			if(!err && albumRes!=null) {
+				if(albumRes.user!=req.decoded.user._id) {
 					req.error = true;
 					res.status(404).json({
 						success: false,
-						errors: [{"msg":"One or more post don't belong to you."}]
+						errors: [{"msg":"One or more album don't belong to you."}]
 					});
 				}
 				i++;
@@ -154,21 +153,21 @@ function validatePosts(req, res, next) {
 				req.error = true;
 				res.status(404).json({
 					success: false,
-					errors: [{"msg":"One or more post doesn't exist."}]
+					errors: [{"msg":"One (or more) album doesn't exist."}]
 				});
 			}
 		});
 	});
-	req.posts = posts;
+	req.albums = albums;
 
 }
 
-function addPosts(req, res, next) {
-	Album.findOneAndUpdate({_id: req.album._id},
-		{$pushAll: {posts: req.posts}}, {new: true},
-	function(err, newAlbum) {
+function addAlbums(req, res, next) {
+	Trip.findOneAndUpdate({_id: req.trip._id},
+		{$pushAll: {albums: req.albums}}, {new: true},
+	function(err, newTrip) {
 		if(!printError(err, req, res)) {
-			req.newAlbum = newAlbum;
+			req.newTrip = newTrip;
 			next();
 		}
 	});
