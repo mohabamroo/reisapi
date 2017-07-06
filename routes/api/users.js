@@ -95,6 +95,10 @@ function ensureUniqueEmail(req, res, next) {
 }
 
 router.get('/loginSuccess', function(req, res) {
+	console.log("request:\n");
+	console.log(req);
+	console.log("user:\n");
+	console.log(req.user);
 	req.user.password = "";
 	req.user.verificationCode = "";
 	if(req.isAuthenticated()) {
