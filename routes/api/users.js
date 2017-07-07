@@ -95,10 +95,6 @@ function ensureUniqueEmail(req, res, next) {
 }
 
 router.get('/loginSuccess', function(req, res) {
-	console.log("request:\n");
-	console.log(req);
-	console.log("user:\n");
-	console.log(req.user);
 	req.user.password = "";
 	req.user.verificationCode = "";
 	if(req.isAuthenticated()) {
@@ -118,6 +114,65 @@ router.get('/loginSuccess', function(req, res) {
 		});
 	}
 
+});
+
+function getUser(req, res, next) {
+	var username = req.body.username;
+	User.getUserbyUsername(username, function(err, user) {
+		if(!printError(err, req, res)) {
+			if(user==null||!user) {
+				console.log("Unknown user");
+				res.status(404).json({
+					success: false,
+					errors: [{"msg":"User not found. wrong username."}]
+				});
+			} else {
+				req.user = user;
+				next();
+			}
+		}
+	});
+}
+
+function validateUser(req, res, next) {
+	var password = req.body.password;
+	User.validatePassword(password, req.user.password, function(err, res) {
+		if(!printError(err, req, res)) {
+			if(res==true) {
+				req.user.password = "";
+				next();
+			} else {
+				res.status(401).json({
+					success: false,
+					errors: [{"msg":"Wrong password."}]
+				});
+			}		
+		}
+	});
+}
+
+function validateLoginInputs(req, res, next) {
+	var password = req.body.password;
+	var username = req.body.username;
+	if(!username||!password) {
+		res.status(400).json({
+			success: false,
+			errors: [{"msg":"missing inputs."}]
+		});
+	} else {
+		next();
+	}
+}
+router.post('/login', validateLoginInputs, getUser, validateUser, function(req, res) {
+	var token = jwt.sign({
+	  user: req.user
+	}, 'ghostrider', { expiresIn: '1000h'});
+	res.status(200).json({
+		success: true,
+		token: token,
+		msg: "Signed in successfully!"
+	});
+		
 });
 
 router.post('/currentUser', ensureAuthenticatedApi, function(req, res) {
