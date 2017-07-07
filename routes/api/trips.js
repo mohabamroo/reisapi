@@ -3,6 +3,7 @@ var router = express.Router();
 var User = require('../../models/user');
 var Post = require('../../models/post');
 var Album = require('../../models/album');
+var Trip = require('../../models/trip');
 
 var apiController = require('../../controllers/apiController');
 var multer  = require('multer');
@@ -27,13 +28,13 @@ function validateTrip(req, res, next) {
 }
 
 function createTrip(req, res, next) {
-	var newTrip = new Album({
+	var newTrip = new Trip({
 		user: req.decoded.user._id,
 		title: req.body.title,
 		public: req.body.public || true,
-		albums: req.body.albums || []
+		albums: []
 	});
-	newAlbum.save(function(err, album) {
+	newTrip.save(function(err, trip) {
 		if(!printError(err, req, res)) {
 			req.trip = trip;
 			next();
@@ -41,6 +42,7 @@ function createTrip(req, res, next) {
 	});
 }
 
+// create trip
 router.post('/create', ensureAuthenticatedApi, validateTrip, createTrip, validateAlbums, addAlbums, function(req, res) {
 	res.status(200).json({
 		success: true,
@@ -48,32 +50,32 @@ router.post('/create', ensureAuthenticatedApi, validateTrip, createTrip, validat
 	});
 });
 
-function checkAlbum(req, res, next) {
-	Album.findById(req.params.albumId).populate({path: 'posts'}).exec(function(err, album) {
+function checkTrip(req, res, next) {
+	Trip.findById(req.params.tripId).populate({path: 'albums'}).exec(function(err, trip) {
 		if(!printError(err, req, res)) {
-			if(album==null ||!album) {
+			if(trip==null ||!trip) {
 				res.status(404).json({
 					success: false,
-					errors: [{"msg":"Album not found!"}]
+					errors: [{"msg":"Trip not found!"}]
 				});
 			} else {
-				req.album = album;
+				req.trip = trip;
 				next();
 			}
 		}
 	});
 }
 
-function checkAlbumAbs(req, res, next) {
-	Album.findById(req.params.albumId).exec(function(err, album) {
+function checkTripAbs(req, res, next) {
+	Trip.findById(req.params.tripId).exec(function(err, trip) {
 		if(!printError(err, req, res)) {
-			if(album==null ||!album) {
+			if(trip==null ||!trip) {
 				res.status(404).json({
 					success: false,
-					errors: [{"msg":"Album not found!"}]
+					errors: [{"msg":"Trip not found!"}]
 				});
 			} else {
-				req.album = album;
+				req.trip = trip;
 				next();
 			}
 		}
@@ -81,30 +83,31 @@ function checkAlbumAbs(req, res, next) {
 }
 
 function verifyPublicOrOwner(req, res, next) {
-	if(req.album.public!=true || !req.decoded || !req.decoded.user._id==req.post.user) {
+	if(req.trip.public!=true || !req.decoded || !req.decoded.user._id==req.trip.user) {
 		res.status(403).json({
 			success: false,
-			errors: [{"msg":"Private album."}]
+			errors: [{"msg":"Private Trip."}]
 		});
 	} else {
 		next();
 	}
 }
 
-router.get('/:albumId', checkAlbum, appendAuth, verifyPublicOrOwner, function(req, res) {
+// view trip
+router.get('/:tripId', checkTrip, appendAuth, verifyPublicOrOwner, function(req, res) {
 	res.status(200).json({
 		success: true,
-		data: req.album
+		data: req.trip
 	});
 });
 
 function verifyOwnership(req, res, next) {
 	userId = req.decoded.user._id;
-	albumUser = req.album.user;
-	if(userId!=albumUser) {
+	tripUser = req.trip.user;
+	if(userId!=tripUser) {
 		res.status(403).json({
 			success: false,
-			errors: [{"msg": "Not owner of this album."}]
+			errors: [{"msg": "Not owner of this trip."}]
 		});
 	} else {
 		next();
@@ -117,13 +120,14 @@ function validatePostsNotEmpty(req, res, next) {
 }
 
 function validateAlbums(req, res, next) {
-	albums = req.body.trips;
-	if(!Array.isArray(trips)) {
-		trips = [trips];
+	albums = req.body.albums;
+	if(!Array.isArray(albums)) {
+		albums = [albums];
 	}
-	var limit =  trips.length;
+	var limit =  albums.length;
 	var i = 0;
-	trips.forEach(function(albumId) {
+	albums.forEach(function(albumId) {
+		console.log(albumId);
 		if(req.trip.albums.indexOf(albumId) >= 0) {
 			res.status(400).json({
 				success: false,
@@ -167,56 +171,70 @@ function addAlbums(req, res, next) {
 		{$pushAll: {albums: req.albums}}, {new: true},
 	function(err, newTrip) {
 		if(!printError(err, req, res)) {
-			req.newTrip = newTrip;
+			req.trip = newTrip;
 			next();
 		}
 	});
+
 } 
 
-router.post('/add/:albumId', ensureAuthenticatedApi, checkAlbumAbs,
-	verifyOwnership, validatePostsNotEmpty, validatePosts, addPosts, function(req, res) {
-	res.status(200).json({
-		success: true,
-		data: req.newAlbum
-	});
-});
-
-function removePosts(req, res, next) {
-	posts = req.body.posts;
-	if(!Array.isArray(posts)) {
-		posts = [posts];
+function validateAlbumsNotEmpty(req, res, next) {
+	if(req.body.albums==null || req.body.albums==[]) {
+		res.status(400).json({
+			success: false,
+			errors: [{"msg":"No albums provided."}]
+		});
+	} else {
+		next();
 	}
-	Album.findOneAndUpdate({_id: req.album._id},
-		{$pullAll: {posts: posts}}, {new: true},
-	function(err, newAlbum) {
+}
+
+// add albums in trip
+router.post('/add/:tripId', ensureAuthenticatedApi, checkTripAbs,
+	verifyOwnership, validateAlbumsNotEmpty, validateAlbums, addAlbums, function(req, res) {
+	res.status(200).json({
+		success: true,
+		data: req.trip
+	});
+});
+
+function removeAlbums(req, res, next) {
+	albums = req.body.albums;
+	if(!Array.isArray(albums)) {
+		albums = [albums];
+	}
+	Trip.findOneAndUpdate({_id: req.trip._id},
+		{$pullAll: {albums: albums}}, {new: true},
+	function(err, newTrip) {
 		if(!printError(err, req, res)) {
-			req.newAlbum = newAlbum;
+			req.trip = newTrip;
 			next();
 		}
 	});
 } 
 
-router.post('/remove/:albumId', ensureAuthenticatedApi, checkAlbum,
-	verifyOwnership, validatePosts, removePosts, function(req, res) {
+// remove albums from trip
+router.post('/remove/:tripId', ensureAuthenticatedApi, checkTrip,
+	verifyOwnership, validateAlbumsNotEmpty, validateAlbums, removeAlbums, function(req, res) {
 	res.status(200).json({
 		success: true,
-		data: req.newAlbum
+		data: req.trip
 	});
 });
 
-function removeAlbum(req, res, next) {
-	Album.remove({_id: req.album._id}, function(err, removeRes) {
+function removeTrip(req, res, next) {
+	Album.remove({_id: req.trip._id}, function(err, removeRes) {
 		if(!printError(err, req, res)) {
 			next();
 		}
 	});
 }
 
-router.post('/delete/:albumId', ensureAuthenticatedApi, checkAlbum,
-	verifyOwnership, removeAlbum, function(req, res) {
+router.post('/delete/:tripId', ensureAuthenticatedApi, checkTrip,
+	verifyOwnership, removeTrip, function(req, res) {
 		res.status(200).json({
 			success: true,
-			msg: "Deleted album"
+			msg: "Deleted Trip"
 		});
 });
 

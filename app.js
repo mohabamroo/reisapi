@@ -45,6 +45,7 @@ module.exports = app;
 var usersApi = require('./routes/api/users');
 var postApi = require('./routes/api/posts');
 var albumApi = require('./routes/api/albums');
+var tripApi = require('./routes/api/trips');
 
 app.set("views", path.resolve(__dirname, "views"));
 app.set("view engine", "ejs"); 
@@ -113,6 +114,7 @@ app.all("/*", function (req, res, next) {
 app.use('/api/users', usersApi);
 app.use('/api/posts', postApi);
 app.use('/api/albums', albumApi);
+app.use('/api/trips', tripApi);
 
 
 // get the app environment from Cloud Foundry
