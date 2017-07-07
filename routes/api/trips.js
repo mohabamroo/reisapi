@@ -120,6 +120,9 @@ function validatePostsNotEmpty(req, res, next) {
 }
 
 function validateAlbums(req, res, next) {
+	if(!req.body.albums) {
+		return next();
+	}
 	albums = req.body.albums;
 	if(!Array.isArray(albums)) {
 		albums = [albums];
@@ -167,6 +170,9 @@ function validateAlbums(req, res, next) {
 }
 
 function addAlbums(req, res, next) {
+	if(!req.body.albums) {
+		return next();
+	}
 	Trip.findOneAndUpdate({_id: req.trip._id},
 		{$pushAll: {albums: req.albums}}, {new: true},
 	function(err, newTrip) {

@@ -31,7 +31,7 @@ function createAlbum(req, res, next) {
 		user: req.decoded.user._id,
 		title: req.body.title,
 		public: req.body.public || true,
-		posts: req.body.posts || []
+		posts: []
 	});
 	newAlbum.save(function(err, album) {
 		if(!printError(err, req, res)) {
@@ -117,6 +117,9 @@ function validatePostsNotEmpty(req, res, next) {
 }
 
 function validatePosts(req, res, next) {
+	if(!req.body.posts) {
+		return next();
+	}
 	posts = req.body.posts;
 	if(!Array.isArray(posts)) {
 		posts = [posts];
@@ -164,6 +167,9 @@ function validatePosts(req, res, next) {
 }
 
 function addPosts(req, res, next) {
+	if(!req.body.posts) {
+		return next();
+	}
 	Album.findOneAndUpdate({_id: req.album._id},
 		{$pushAll: {posts: req.posts}}, {new: true},
 	function(err, newAlbum) {
