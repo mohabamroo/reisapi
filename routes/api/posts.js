@@ -24,10 +24,13 @@ function createNewPost(req, res, next) {
 		user: req.decoded.user._id,
 		text: req.body.text || "no caption",
 		public: req.body.public || true,
-		dataURL: req.body.dataURL
+		dataURL: req.body.dataURL,
+		sticker: req.body.sticker
 	});
 	req.newPost = newPost;
+	console.log(newPost);
 	newPost.save(function(err, postRes) {
+		console.log(postRes);
 		if(!printError(err, req, res)) {
 			req.newPost = postRes;
 			next();
@@ -133,5 +136,75 @@ router.get('/:postId', checkPost, appendAuth, verifyPublicOrOwner, function(req,
 		success: true,
 		data: req.post
 	});
-})
+});
+
+/*router.get('/search/:sticker', function(req, res) {
+	Post.search( {query_string:{query:req.params.sticker}}, { hydrate:true }, function(err,results) {  
+		console.log(err);
+		res.json(results);
+	});
+});*/
+
+router.get('/search/:sticker', function(req, res) {
+	Post.find( {sticker: req.params.sticker}, function(err, results) {  
+		if(!printError(err, req, res)) {
+			res.status(200).json(results);
+		}
+	});
+});
+
+
+function getUser(req, res, next) {
+	var username = req.params.username;
+	User.findOne({username: username}, function(err, user) {
+		if(!printError(err, req, res)) {
+			if(user) {
+				user.password = "";
+				req.user = user;
+				next();
+			} else {
+				res.status(404).json({
+					success: false,
+					errors: [{"msg":"User not found"}]
+				});
+			}
+		}
+	});
+}
+
+function getPosts(req, res, next) {
+	var pageNumber = req.params.pageNumber;
+	var nPerPage = 5;
+	var skipN = pageNumber > 0 ? ((pageNumber-1)*nPerPage) : 0;
+	Post.find({user: req.user._id}).skip(skipN).limit(nPerPage).exec(function(err, posts) {
+		if(!printError(err, req, res)) {
+			req.posts = posts;
+			next();
+		}
+	});
+}
+
+function filterPosts(req, res, next) {
+	console.log(req.user._id);
+	// console.log(req.decoded.user._id);
+	if(req.decoded && req.user._id == req.decoded.user._id) {
+		next();
+	} else {
+		var publicPosts = [];
+		req.posts.forEach(function(post) {
+			if(post.public==true) {
+				publicPosts.push(post);
+			}
+		});
+		req.posts = publicPosts;
+		next();
+	}
+}
+
+router.get('/list/:username/:pageNumber', getUser, appendAuth, getPosts, filterPosts, function(req, res) {
+	res.status(200).json(req.posts);
+
+});
+
+
 module.exports = router;
