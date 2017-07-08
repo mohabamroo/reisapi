@@ -116,14 +116,14 @@ app.use('/api/posts', postApi);
 app.use('/api/albums', albumApi);
 app.use('/api/trips', tripApi);
 
-// app.listen(process.env.PORT||3000, function() {
-//  console.log("Express app started on port 3000.");
-// });
+app.listen(process.env.PORT||3000, function() {
+ console.log("Express app started on port 3000.");
+});
 
 // get the app environment from Cloud Foundry
 var appEnv = cfenv.getAppEnv();
 
 // start server on the specified port and binding host
-app.listen(appEnv.port, appEnv.bind, function() {
-  console.log("server starting on " + appEnv.url);
-});
+// app.listen(appEnv.port, appEnv.bind, function() {
+//   console.log("server starting on " + appEnv.url);
+// });
