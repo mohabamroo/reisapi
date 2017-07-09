@@ -191,7 +191,7 @@ function getUser(req, res, next) {
 	});
 }
 
-function getPosts(req, res, next) {
+function getUserPosts(req, res, next) {
 	var pageNumber = req.params.pageNumber;
 	var nPerPage = 5;
 	var skipN = pageNumber > 0 ? ((pageNumber-1)*nPerPage) : 0;
@@ -220,7 +220,7 @@ function filterPosts(req, res, next) {
 	}
 }
 
-router.get('/list/:username/:pageNumber', getUser, appendAuth, getPosts, filterPosts, function(req, res) {
+router.get('/list/:username/:pageNumber', getUser, appendAuth, getUserPosts, filterPosts, function(req, res) {
 	res.status(200).json({
 		success: true,
 		data: {
@@ -229,6 +229,27 @@ router.get('/list/:username/:pageNumber', getUser, appendAuth, getPosts, filterP
 		}
 	});
 
+});
+
+function getPosts(req, res, next) {
+	var pageNumber = req.params.pageNumber;
+	var nPerPage = 5;
+	var skipN = pageNumber > 0 ? ((pageNumber-1)*nPerPage) : 0;
+	Post.find().skip(skipN).limit(nPerPage).sort({created: 'desc'})
+	.populate({path:'user', select: {'password': 0, 'verificationCode': 0}})
+	.exec(function(err, posts) {
+		if(!printError(err, req, res)) {
+			req.posts = posts;
+			next();
+		}
+	});
+}
+
+router.get('/timeline/:pageNumber', ensureAuthenticatedApi, getPosts, function(req, res) {
+	res.status(200).json({
+		success: true,
+		data: req.posts
+	});
 });
 
 

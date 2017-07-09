@@ -18,6 +18,7 @@ var postSchema = mongoose.Schema({
 	},
 	dataURL: String,
 	sticker: {type: String, index:true},
+	created: { type: Date, default: Date.now }
 	// sticker: {type: String, es_indexed:true}
 
 });
