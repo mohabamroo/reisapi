@@ -233,7 +233,7 @@ router.get('/list/:username/:pageNumber', getUser, appendAuth, getUserPosts, fil
 
 function getPosts(req, res, next) {
 	var pageNumber = req.params.pageNumber;
-	var nPerPage = 5;
+	var nPerPage = 10;
 	var skipN = pageNumber > 0 ? ((pageNumber-1)*nPerPage) : 0;
 	Post.find().skip(skipN).limit(nPerPage).sort({created: 'desc'})
 	.populate({path:'user', select: {'password': 0, 'verificationCode': 0}})
