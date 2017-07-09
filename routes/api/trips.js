@@ -66,6 +66,24 @@ function checkTrip(req, res, next) {
 	});
 }
 
+function getTrip(req, res, next) {
+	Trip.findById(req.params.tripId).populate({path: 'albums'}).populate({path: 'user'}).exec(function(err, trip) {
+		if(!printError(err, req, res)) {
+			if(trip==null ||!trip) {
+				res.status(404).json({
+					success: false,
+					errors: [{"msg":"Trip not found!"}]
+				});
+			} else {
+				trip.user.password = "";
+				trip.user.verificationCode = "";
+				req.trip = trip;
+				next();
+			}
+		}
+	});
+}
+
 function checkTripAbs(req, res, next) {
 	Trip.findById(req.params.tripId).exec(function(err, trip) {
 		if(!printError(err, req, res)) {
@@ -83,7 +101,7 @@ function checkTripAbs(req, res, next) {
 }
 
 function verifyPublicOrOwner(req, res, next) {
-	if(req.trip.public!=true || !req.decoded || !req.decoded.user._id==req.trip.user) {
+	if(req.trip.public!=true && (!req.decoded || !req.decoded.user._id==req.trip.user)) {
 		res.status(403).json({
 			success: false,
 			errors: [{"msg":"Private Trip."}]
@@ -94,7 +112,7 @@ function verifyPublicOrOwner(req, res, next) {
 }
 
 // view trip
-router.get('/:tripId', checkTrip, appendAuth, verifyPublicOrOwner, function(req, res) {
+router.get('/:tripId', getTrip, appendAuth, verifyPublicOrOwner, function(req, res) {
 	res.status(200).json({
 		success: true,
 		data: req.trip

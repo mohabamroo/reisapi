@@ -64,6 +64,25 @@ function checkAlbum(req, res, next) {
 	});
 }
 
+
+function getAlbum(req, res, next) {
+	Album.findById(req.params.albumId).populate({path: 'posts'}).populate({path: 'user'}).exec(function(err, album) {
+		if(!printError(err, req, res)) {
+			if(album==null ||!album) {
+				res.status(404).json({
+					success: false,
+					errors: [{"msg":"Album not found!"}]
+				});
+			} else {
+				album.user.password = "";
+				album.user.verificationCode = "";
+				req.album = album;
+				next();
+			}
+		}
+	});
+}
+
 function checkAlbumAbs(req, res, next) {
 	Album.findById(req.params.albumId).exec(function(err, album) {
 		if(!printError(err, req, res)) {
@@ -81,7 +100,7 @@ function checkAlbumAbs(req, res, next) {
 }
 
 function verifyPublicOrOwner(req, res, next) {
-	if(req.album.public!=true || !req.decoded || !req.decoded.user._id==req.post.user) {
+	if(req.album.public!=true && (!req.decoded || !req.decoded.user._id==req.post.user)) {
 		res.status(403).json({
 			success: false,
 			errors: [{"msg":"Private album."}]
@@ -91,7 +110,7 @@ function verifyPublicOrOwner(req, res, next) {
 	}
 }
 
-router.get('/:albumId', checkAlbum, appendAuth, verifyPublicOrOwner, function(req, res) {
+router.get('/:albumId', getAlbum, appendAuth, verifyPublicOrOwner, function(req, res) {
 	res.status(200).json({
 		success: true,
 		data: req.album

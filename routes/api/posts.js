@@ -68,6 +68,24 @@ function checkPost(req, res, next) {
 	});
 }
 
+function getPost(req, res, next) {
+	Post.findById(req.params.postId).populate({'path':'user'}).exec(function(err, post) {
+		if(!printError(err, req, res)) {
+			if(post==null ||!post) {
+				res.status(404).json({
+					success: false,
+					errors: [{"msg":"Post not found!"}]
+				});
+			} else {
+				post.user.password = "";
+				post.user.verificationCode = "";
+				req.post = post;
+				next();
+			}
+		}
+	});
+}
+
 function verifyOwnership(req, res, next) {
 	userId = req.decoded.user._id;
 	postUser = req.post.user;
@@ -121,7 +139,8 @@ router.post('/update/:postId/', ensureAuthenticatedApi, checkPost, verifyOwnersh
 });
 
 function verifyPublicOrOwner(req, res, next) {
-	if(req.post.public!=true || !req.decoded || !req.decoded.user._id==req.post.user) {
+	console.log(req.post.public)
+	if(req.post.public!=true && (!req.decoded || !req.decoded.user._id==req.post.user)) {
 		res.status(403).json({
 			success: false,
 			errors: [{"msg":"Private post."}]
@@ -131,7 +150,7 @@ function verifyPublicOrOwner(req, res, next) {
 	}
 }
 
-router.get('/:postId', checkPost, appendAuth, verifyPublicOrOwner, function(req, res) {
+router.get('/:postId', getPost, appendAuth, verifyPublicOrOwner, function(req, res) {
 	res.status(200).json({
 		success: true,
 		data: req.post
@@ -202,7 +221,13 @@ function filterPosts(req, res, next) {
 }
 
 router.get('/list/:username/:pageNumber', getUser, appendAuth, getPosts, filterPosts, function(req, res) {
-	res.status(200).json(req.posts);
+	res.status(200).json({
+		success: true,
+		data: {
+			posts: req.posts,
+			user: req.user
+		}
+	});
 
 });
 
