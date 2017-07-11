@@ -136,9 +136,9 @@ function getUser(req, res, next) {
 
 function validateUser(req, res, next) {
 	var password = req.body.password;
-	User.validatePassword(password, req.user.password, function(err, res) {
+	User.validatePassword(password, req.user.password, function(err, result) {
 		if(!printError(err, req, res)) {
-			if(res==true) {
+			if(result==true) {
 				req.user.password = "";
 				next();
 			} else {
