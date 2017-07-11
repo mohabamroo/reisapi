@@ -30,6 +30,7 @@ function createAlbum(req, res, next) {
 	var newAlbum = new Album({
 		user: req.decoded.user._id,
 		title: req.body.title,
+		cover: req.body.cover,
 		public: req.body.public || true,
 		posts: []
 	});
@@ -41,7 +42,38 @@ function createAlbum(req, res, next) {
 	});
 }
 
-router.post('/create', ensureAuthenticatedApi, validateAlbum, createAlbum, validatePosts, addPosts, function(req, res) {
+function createPosts(req, res, next) {
+	if(!req.body.posts) {
+		return next();
+	}
+	posts = req.body.posts;
+	if(!Array.isArray(posts)) {
+		posts = [posts];
+	}
+	var postsToInsert = [];
+	posts.forEach(function(dataURL) {
+		var newPost = new Post({
+			user: req.decoded.user._id,
+			text: "no caption",
+			public: req.body.public,
+			dataURL: dataURL,
+		});
+		postsToInsert.push(newPost);
+	});
+	var postsIds = [];
+	Post.insertMany(postsToInsert, function(err, postsRes) {
+		postsRes.forEach(function(post) {
+			postsIds.push(post._id);
+		});
+		req.body.posts = postsIds;
+		next();
+	});
+}
+
+// now create takes urls not postsIds
+// removed: validate posts
+// added: createPosts
+router.post('/create', ensureAuthenticatedApi, validateAlbum, createAlbum, createPosts, addPosts, function(req, res) {
 	res.status(200).json({
 		success: true,
 		data: req.album
@@ -190,10 +222,10 @@ function addPosts(req, res, next) {
 		return next();
 	}
 	Album.findOneAndUpdate({_id: req.album._id},
-		{$pushAll: {posts: req.posts}}, {new: true},
+		{$pushAll: {posts: req.body.posts}}, {new: true},
 	function(err, newAlbum) {
 		if(!printError(err, req, res)) {
-			req.newAlbum = newAlbum;
+			req.album = newAlbum;
 			next();
 		}
 	});

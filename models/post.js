@@ -18,7 +18,11 @@ var postSchema = mongoose.Schema({
 	},
 	dataURL: String,
 	sticker: {type: String, index:true},
-	created: { type: Date, default: Date.now }
+	created: { type: Date, default: Date.now },
+	location: {
+		lat: String,
+		lng: String
+	},
 	// sticker: {type: String, es_indexed:true}
 
 });

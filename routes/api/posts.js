@@ -25,12 +25,14 @@ function createNewPost(req, res, next) {
 		text: req.body.text || "no caption",
 		public: req.body.public || true,
 		dataURL: req.body.dataURL,
-		sticker: req.body.sticker
+		sticker: req.body.sticker,
+		location: {
+			lat: req.body.lat,
+			lng: req.body.lng
+		}
 	});
 	req.newPost = newPost;
-	console.log(newPost);
 	newPost.save(function(err, postRes) {
-		console.log(postRes);
 		if(!printError(err, req, res)) {
 			req.newPost = postRes;
 			next();
@@ -139,7 +141,6 @@ router.post('/update/:postId/', ensureAuthenticatedApi, checkPost, verifyOwnersh
 });
 
 function verifyPublicOrOwner(req, res, next) {
-	console.log(req.post.public)
 	if(req.post.public!=true && (!req.decoded || !req.decoded.user._id==req.post.user)) {
 		res.status(403).json({
 			success: false,
@@ -204,8 +205,6 @@ function getUserPosts(req, res, next) {
 }
 
 function filterPosts(req, res, next) {
-	console.log(req.user._id);
-	// console.log(req.decoded.user._id);
 	if(req.decoded && req.user._id == req.decoded.user._id) {
 		next();
 	} else {
