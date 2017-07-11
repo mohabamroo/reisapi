@@ -30,6 +30,7 @@ function createAlbum(req, res, next) {
 	var newAlbum = new Album({
 		user: req.decoded.user._id,
 		title: req.body.title,
+		description: req.body.description,
 		cover: req.body.cover,
 		public: req.body.public || true,
 		posts: []

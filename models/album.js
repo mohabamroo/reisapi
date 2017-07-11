@@ -11,6 +11,7 @@ var albumSchema = mongoose.Schema({
 		type: String
 	},
 	cover: String,
+	description: String,
 	public: {type: Boolean, default: true},
 	posts: [ {
 		type: String,
