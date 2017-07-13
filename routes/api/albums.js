@@ -33,7 +33,11 @@ function createAlbum(req, res, next) {
 		description: req.body.description,
 		cover: req.body.cover,
 		public: req.body.public || true,
-		posts: []
+		posts: [],
+		location: {
+			lat: req.body.lat,
+			lng: req.body.lng
+		}
 	});
 	newAlbum.save(function(err, album) {
 		if(!printError(err, req, res)) {

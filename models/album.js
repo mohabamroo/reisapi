@@ -16,7 +16,11 @@ var albumSchema = mongoose.Schema({
 	posts: [ {
 		type: String,
 		ref: 'Post'
-	}]
+	}],
+	location: {
+		lat: String,
+		lng: String
+	},
 	
 });
 
