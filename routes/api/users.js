@@ -382,6 +382,16 @@ router.get('/profile/:username', function(req,res) {
 	});
     
 });
+router.get('/search/:username', function(req, res) {
+	User.find({$or: [
+			{username: {'$regex': '.*'+req.params.username+'.*'}},
+			{email: {'$regex': '.*'+req.params.username+'.*'}},
+		]}, function(err, results) {
+		if(!printError(err, req, res)) {
+			res.status(200).json(results);
+		}
+	});
+});
 
 
 module.exports = router;
