@@ -23,12 +23,13 @@ var clientS3 = client.s3;
 module.exports.clientS3 = clientS3; 
 
 function printError(err, req, res) {
+	console.log("dglih")
 	if(err) {
 		console.log(err);
-		res.json({
+		res.status(400).json({
 			success: false,
 			errors: [err]
-		}).status(400);
+		});
 		return true;
 	} else {
 		return false;
@@ -111,13 +112,10 @@ module.exports.newtoken = function(res, updatedUser) {
 module.exports.validateErrors = function(req, res, next) {
 	errors = req.validationErrors();
 	if(errors) {
-		errors.forEach(function(error) {
-			printError(error, req, res);
-		});
-		res.json({
+		res.status(400).json({
 			success: false,
 			msg: "Please try again",
-			data: errors
+			errors: errors
 		});
 	} else
 		next();

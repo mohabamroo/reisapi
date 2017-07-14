@@ -25,15 +25,18 @@ function createNewPost(req, res, next) {
 		text: req.body.text || "no caption",
 		public: req.body.public || true,
 		dataURL: req.body.dataURL,
-		sticker: req.body.sticker,
+		stickers: req.body.stickers,
 		location: {
 			lat: req.body.lat,
 			lng: req.body.lng
 		}
 	});
 	req.newPost = newPost;
+	console.log(newPost)
 	newPost.save(function(err, postRes) {
+		console.log("fglgnlfjn")
 		if(!printError(err, req, res)) {
+			console.log("flgjn")
 			req.newPost = postRes;
 			next();
         }
@@ -45,7 +48,7 @@ function validateNewPost(req, res, next) {
 	validateErrors(req, res, next);
 }
 
-router.post('/create', ensureAuthenticatedApi, validateNewPost, createNewPost, function(req, res) {
+router.post('/create', ensureAuthenticatedApi, validateNewPost, processStickers, createNewPost, function(req, res) {
 	res.status(200).json({
 		success: true,
 		msg: "Uploaded post.",
@@ -165,8 +168,23 @@ router.get('/:postId', getPost, appendAuth, verifyPublicOrOwner, function(req, r
 	});
 });*/
 
+function processStickers(req, res, next) {
+	if(req.body.stickers) {
+		var stickers = req.body.stickers;
+		if(!Array.isArray(stickers)) {
+			stickers = [stickers];
+		}
+		var newStickers = [];
+		stickers.forEach(function(sticker) {
+			newStickers.push(sticker.trim());
+		});
+		req.body.stickers = newStickers;
+	}
+	next();
+}
 router.get('/search/:sticker', function(req, res) {
-	Post.find( {sticker: req.params.sticker}, function(err, results) {  
+	Post.find({stickers: req.params.sticker}, function(err, results) {
+		console.log(results)
 		if(!printError(err, req, res)) {
 			res.status(200).json(results);
 		}
