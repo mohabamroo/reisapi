@@ -5,3 +5,10 @@ posts/delete/:id
 posts/create
 
 posts/:id
+
+3 feat:
+1- qr code scanner
+2- travelling profile
+3- search based on location
+
+
