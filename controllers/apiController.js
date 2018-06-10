@@ -23,18 +23,18 @@ var clientS3 = client.s3;
 module.exports.clientS3 = clientS3; 
 
 function printError(err, req, res) {
-	console.log("dglih")
 	if(err) {
 		console.log(err);
 		res.status(400).json({
 			success: false,
 			errors: [err]
 		});
-		return true;
+		res.end();
 	} else {
 		return false;
 	}
 }
+
 module.exports.printError = printError;
 
 module.exports.printResult = function(result) {

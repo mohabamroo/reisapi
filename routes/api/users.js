@@ -214,9 +214,6 @@ function validateErrors(req, res, next) {
 	}
 	errors = req.validationErrors();
 	if(errors) {
-		errors.forEach(function(error) {
-			printError(error, req, res);
-		});
 		res.json({
 			success: false,
 			msg: "Please try again",
@@ -255,8 +252,8 @@ function createNewUser(req, res, next) {
 	var newUser = req.newUser;
 	var rand = req.rand;
 	User.createUser(newUser, function(err, user) {
-		// printError(err, req, res, next);
 		if(err) {
+			console.log("errorororororo")
 			res.status(400).json({
 				success: false,
 				errors: [err]
@@ -270,18 +267,15 @@ function createNewUser(req, res, next) {
 			      link: link,
 			      name: newUser.username
 			    }, function (errEmail) {
-			        printError(errEmail, req, res);
-			        if(!printError(errEmail, req, res)) {
+					console.log("sending email")
+					if(errEmail) {
+						printError(errEmail, req, res);
+					} else {
+						console.log("b3ad")
 						req.newUser = user;
 						next();
-			        } else {
-				        res.json({
-				        	success: false,
-				        	errors: [errEmail]
-				        });	
-			        }
+					}
 			    });	
-			
 		}
 			
 	});
@@ -290,10 +284,10 @@ function createNewUser(req, res, next) {
 // info required: useername, email, password, confirmpassowrd
 router.post('/signup', validateErrors, appendNewUserObj,
 	ensureUniqueUsername, ensureUniqueEmail, createNewUser, function(req, res) {
-	res.json({
-		success: true,
+		console.log("hnanan")
+	res.status(200).json({
 		msg: 'You signed up successfully! Please, check and verify your email.',
-	}).status(200);
+	});
 	
 });
 
