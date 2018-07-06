@@ -1,24 +1,36 @@
 // var mongoosastic=require("mongoosastic");
 
 var mongoose = require('mongoose');
+var deepPopulate = require('mongoose-deep-populate')(mongoose);
 
 var postSchema = mongoose.Schema({
 	user: {
 		type: String,
-		index: true, 
+		index: true,
 		required: true,
 		ref: 'User'
 	},
-	text: {
+	caption: {
 		type: String
 	},
-	public: {type: Boolean, default: true},
-	location: {
+	public: {
+		type: Boolean,
+		default: true
+	},
+	city: {
 		type: String
 	},
 	dataURL: String,
-	stickers: [{type: String, index:true}],
-	created: { type: Date, default: Date.now },
+	stickers: [{
+		type: String,
+		index: true,
+		required: true,
+		ref: 'Sticker'
+	}],
+	created: {
+		type: Date,
+		default: Date.now
+	},
 	location: {
 		lat: String,
 		lng: String
@@ -26,7 +38,7 @@ var postSchema = mongoose.Schema({
 	// sticker: {type: String, es_indexed:true}
 
 });
-
+postSchema.plugin(deepPopulate);
 
 var Post = module.exports = mongoose.model('Post', postSchema);
 
@@ -38,7 +50,8 @@ var client = new elasticsearch.Client({
 });
 yeUKaihJooFGQR80Br8bikd0
 postSchema.plugin(mongoosastic, {esClient: client});  
-*//*Post.createMapping(function(err, mapping){  
+*/
+/*Post.createMapping(function(err, mapping){  
   if(err){
     console.log('error creating mapping (you can safely ignore this)');
     console.log(err);
@@ -48,7 +61,6 @@ postSchema.plugin(mongoosastic, {esClient: client});
   }
 });*/
 
-module.exports.createPost = function(newPost, callback) {
+module.exports.createPost = function (newPost, callback) {
 	newPost.save(callback);
 }
-

@@ -282,7 +282,7 @@ function createNewUser(req, res, next) {
 }
 
 // info required: useername, email, password, confirmpassowrd
-router.post('/signup', validateErrors, appendNewUserObj,
+router.post('/register', validateErrors, appendNewUserObj,
 	ensureUniqueUsername, ensureUniqueEmail, createNewUser, function(req, res) {
 		console.log("hnanan")
 	res.status(200).json({

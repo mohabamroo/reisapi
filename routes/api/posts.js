@@ -3,17 +3,19 @@ var router = express.Router();
 var User = require('../../models/user');
 var Post = require('../../models/post');
 var apiController = require('../../controllers/apiController');
-var multer  = require('multer');
+var multer = require('multer');
 var mailer = require('express-mailer');
 var app = require('../../app.js');
 var randomstring = require("randomstring");
 var jwt = require('jsonwebtoken');
 
+var deepPopulate = require('mongoose-deep-populate')(global.mongoose);
+
 var printError = apiController.printError;
-var clientS3 = apiController.clientS3;
 var printResult = apiController.printResult;
 var ensureAdmin = apiController.ensureAdmin;
 var ensureAuthenticatedApi = apiController.ensureAuthenticatedApi;
+var removeDuplicates = apiController.removeDuplicates;
 var uniqueName = apiController.uniqueName;
 var newtoken = apiController.newtoken;
 var validateErrors = apiController.validateErrors;
@@ -33,13 +35,13 @@ function createNewPost(req, res, next) {
 	});
 	req.newPost = newPost;
 	console.log(newPost)
-	newPost.save(function(err, postRes) {
+	newPost.save(function (err, postRes) {
 		console.log("fglgnlfjn")
-		if(!printError(err, req, res)) {
+		if (!printError(err, req, res)) {
 			console.log("flgjn")
 			req.newPost = postRes;
 			next();
-        }
+		}
 	});
 }
 
@@ -48,7 +50,7 @@ function validateNewPost(req, res, next) {
 	validateErrors(req, res, next);
 }
 
-router.post('/create', ensureAuthenticatedApi, validateNewPost, processStickers, createNewPost, function(req, res) {
+router.post('/', ensureAuthenticatedApi, validateNewPost, createNewPost, function (req, res) {
 	res.status(200).json({
 		success: true,
 		msg: "Uploaded post.",
@@ -58,12 +60,14 @@ router.post('/create', ensureAuthenticatedApi, validateNewPost, processStickers,
 
 
 function checkPost(req, res, next) {
-	Post.findById(req.params.postId, function(err, post) {
-		if(!printError(err, req, res)) {
-			if(post==null ||!post) {
+	Post.findById(req.params.postId, function (err, post) {
+		if (!printError(err, req, res)) {
+			if (post == null || !post) {
 				res.status(404).json({
 					success: false,
-					errors: [{"msg":"Post not found!"}]
+					errors: [{
+						"msg": "Post not found!"
+					}]
 				});
 			} else {
 				req.post = post;
@@ -74,12 +78,18 @@ function checkPost(req, res, next) {
 }
 
 function getPost(req, res, next) {
-	Post.findById(req.params.postId).populate({'path':'user'}).exec(function(err, post) {
-		if(!printError(err, req, res)) {
-			if(post==null ||!post) {
+	Post.findById(req.params.postId).populate({
+		'path': 'user'
+	}).populate({
+		'path': 'stickers'
+	}).exec(function (err, post) {
+		if (!printError(err, req, res)) {
+			if (post == null || !post) {
 				res.status(404).json({
 					success: false,
-					errors: [{"msg":"Post not found!"}]
+					errors: [{
+						"msg": "Post not found!"
+					}]
 				});
 			} else {
 				post.user.password = "";
@@ -94,10 +104,12 @@ function getPost(req, res, next) {
 function verifyOwnership(req, res, next) {
 	userId = req.decoded.user._id;
 	postUser = req.post.user;
-	if(userId!=postUser) {
+	if (userId != postUser) {
 		res.status(403).json({
 			success: false,
-			errors: [{"msg": "Not owner of this post."}]
+			errors: [{
+				"msg": "Not owner of this post."
+			}]
 		});
 	} else {
 		next();
@@ -105,15 +117,17 @@ function verifyOwnership(req, res, next) {
 }
 
 function deletePost(req, res, next) {
-	Post.remove({_id: req.post._id}, function(err, removeRes) {
-		if(!printError(err, req, res)) {
+	Post.remove({
+		_id: req.post._id
+	}, function (err, removeRes) {
+		if (!printError(err, req, res)) {
 			printResult(removeRes);
 			next();
 		}
 	});
 }
 
-router.post('/delete/:postId/', ensureAuthenticatedApi, checkPost, verifyOwnership, deletePost, function(req, res) {
+router.delete('/:postId/', ensureAuthenticatedApi, checkPost, verifyOwnership, deletePost, function (req, res) {
 	res.status(200).json({
 		success: true,
 		msg: "Deleted post."
@@ -122,20 +136,25 @@ router.post('/delete/:postId/', ensureAuthenticatedApi, checkPost, verifyOwnersh
 
 
 function updatePost(req, res, next) {
-	Post.findOneAndUpdate({_id: req.post._id}, {$set: {
-		text: req.body.text || req.post.text,
-		public: req.body.public || req.post.public,
-		location: req.body.location || req.post.location
-	}},
-	{new: true}, function(err, updatedPost) {
-		if(!printError(err, req, res)) {
+	Post.findOneAndUpdate({
+		_id: req.post._id
+	}, {
+		$set: {
+			text: req.body.text || req.post.text,
+			public: req.body.public || req.post.public,
+			location: req.body.location || req.post.location
+		}
+	}, {
+		new: true
+	}, function (err, updatedPost) {
+		if (!printError(err, req, res)) {
 			req.updatedPost = updatedPost;
 			next();
 		}
 	});
 }
 
-router.post('/update/:postId/', ensureAuthenticatedApi, checkPost, verifyOwnership, updatePost, function(req, res) {
+router.put('/:postId/', ensureAuthenticatedApi, checkPost, verifyOwnership, updatePost, function (req, res) {
 	res.status(200).json({
 		success: true,
 		data: req.updatedPost,
@@ -144,17 +163,19 @@ router.post('/update/:postId/', ensureAuthenticatedApi, checkPost, verifyOwnersh
 });
 
 function verifyPublicOrOwner(req, res, next) {
-	if(req.post.public!=true && (!req.decoded || !req.decoded.user._id==req.post.user)) {
+	if (req.post.public != true && (!req.decoded || !req.decoded.user._id == req.post.user)) {
 		res.status(403).json({
 			success: false,
-			errors: [{"msg":"Private post."}]
+			errors: [{
+				"msg": "Private post."
+			}]
 		});
 	} else {
 		next();
 	}
 }
 
-router.get('/:postId', getPost, appendAuth, verifyPublicOrOwner, function(req, res) {
+router.get('/:postId', getPost, appendAuth, verifyPublicOrOwner, function (req, res) {
 	res.status(200).json({
 		success: true,
 		data: req.post
@@ -168,42 +189,63 @@ router.get('/:postId', getPost, appendAuth, verifyPublicOrOwner, function(req, r
 	});
 });*/
 
-function processStickers(req, res, next) {
-	if(req.body.stickers) {
-		var stickers = req.body.stickers;
-		if(!Array.isArray(stickers)) {
-			stickers = [stickers];
-		}
-		var newStickers = [];
-		stickers.forEach(function(sticker) {
-			newStickers.push(sticker.trim());
-		});
-		req.body.stickers = newStickers;
-	}
-	next();
-}
-router.get('/search/:sticker', function(req, res) {
-	Post.find({stickers: req.params.sticker}, function(err, results) {
-		console.log(results)
-		if(!printError(err, req, res)) {
-			res.status(200).json(results);
+function updateStickers(req, res, next) {
+	req.post.stickers = req.post.stickers.concat(req.body.add);
+	req.post.stickers = req.post.stickers.filter(x => !req.body.remove.includes(x));
+	req.post.stickers = removeDuplicates(req.post.stickers);
+	req.post.save(function (err, updatedPost) {
+		req.post = updatedPost;
+		if (!printError(err, req, res)) {
+			next();
 		}
 	});
+}
+router.post('/:postId/stickers/', ensureAuthenticatedApi, checkPost, verifyOwnership, updateStickers, function (req, res) {
+	res.status(200).json({
+		msg: "Stickers updated!",
+		post: req.post
+	});
+});
+
+router.get('/sticker/:sticker', function (req, res) {
+	Post.find({
+			stickers: req.params.sticker
+		}).populate({
+			path: "user",
+			select: {
+				'password': 0,
+				'verificationCode': 0
+			}
+		}).populate({
+			path: 'stickers',
+			select: {
+				'name': 1
+			}
+		})
+		.exec(function (err, results) {
+			if (!printError(err, req, res)) {
+				res.status(200).json({posts: results});
+			}
+		});
 });
 
 
 function getUser(req, res, next) {
 	var username = req.params.username;
-	User.findOne({username: username}, function(err, user) {
-		if(!printError(err, req, res)) {
-			if(user) {
+	User.findOne({
+		username: username
+	}, function (err, user) {
+		if (!printError(err, req, res)) {
+			if (user) {
 				user.password = "";
 				req.user = user;
 				next();
 			} else {
 				res.status(404).json({
 					success: false,
-					errors: [{"msg":"User not found"}]
+					errors: [{
+						"msg": "User not found"
+					}]
 				});
 			}
 		}
@@ -213,22 +255,38 @@ function getUser(req, res, next) {
 function getUserPosts(req, res, next) {
 	var pageNumber = req.params.pageNumber;
 	var nPerPage = 5;
-	var skipN = pageNumber > 0 ? ((pageNumber-1)*nPerPage) : 0;
-	Post.find({user: req.user._id}).skip(skipN).limit(nPerPage).exec(function(err, posts) {
-		if(!printError(err, req, res)) {
-			req.posts = posts;
-			next();
-		}
-	});
+	var skipN = pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0;
+	Post.find({
+			user: req.user._id
+		})
+		.skip(skipN).limit(nPerPage)
+		.populate({
+			path: 'stickers',
+			select: {
+				'name': 1
+			}
+		})
+		.populate({
+			path: 'stickers',
+			select: {
+				'name': 1
+			}
+		})
+		.exec(function (err, posts) {
+			if (!printError(err, req, res)) {
+				req.posts = posts;
+				next();
+			}
+		});
 }
 
 function filterPosts(req, res, next) {
-	if(req.decoded && req.user._id == req.decoded.user._id) {
+	if (req.decoded && req.user._id == req.decoded.user._id) {
 		next();
 	} else {
 		var publicPosts = [];
-		req.posts.forEach(function(post) {
-			if(post.public==true) {
+		req.posts.forEach(function (post) {
+			if (post.public == true) {
 				publicPosts.push(post);
 			}
 		});
@@ -237,7 +295,7 @@ function filterPosts(req, res, next) {
 	}
 }
 
-router.get('/list/:username/:pageNumber', getUser, appendAuth, getUserPosts, filterPosts, function(req, res) {
+router.get('/list/:username/:pageNumber', getUser, appendAuth, getUserPosts, filterPosts, function (req, res) {
 	res.status(200).json({
 		success: true,
 		data: {
@@ -248,24 +306,39 @@ router.get('/list/:username/:pageNumber', getUser, appendAuth, getUserPosts, fil
 
 });
 
+// TODO: Add find criteria
 function getPosts(req, res, next) {
 	var pageNumber = req.params.pageNumber;
 	var nPerPage = 10;
-	var skipN = pageNumber > 0 ? ((pageNumber-1)*nPerPage) : 0;
-	Post.find().skip(skipN).limit(nPerPage).sort({created: 'desc'})
-	.populate({path:'user', select: {'password': 0, 'verificationCode': 0}})
-	.exec(function(err, posts) {
-		if(!printError(err, req, res)) {
-			req.posts = posts;
-			next();
-		}
-	});
+	var skipN = pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0;
+	Post.find().skip(skipN).limit(nPerPage).sort({
+			created: 'desc'
+		})
+		.populate({
+			path: 'stickers',
+			select: {
+				'name': 1
+			}
+		})
+		.populate({
+			path: 'user',
+			select: {
+				'password': 0,
+				'verificationCode': 0
+			}
+		})
+		.exec(function (err, posts) {
+			if (!printError(err, req, res)) {
+				req.posts = posts;
+				next();
+			}
+		});
 }
 
-router.get('/timeline/:pageNumber', ensureAuthenticatedApi, getPosts, function(req, res) {
+router.get('/timeline/:pageNumber', ensureAuthenticatedApi, getPosts, function (req, res) {
 	res.status(200).json({
 		success: true,
-		data: req.posts
+		posts: req.posts
 	});
 });
 

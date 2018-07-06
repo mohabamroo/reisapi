@@ -17,9 +17,11 @@ var userUploadsPath = path.resolve(__dirname, "user_uploads");
 var publicPath = path.join(__dirname, 'public');
 var mongo = require('mongodb');
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://mohabamroo:ghostrider1@ds139262.mlab.com:39262/reis-monrach');
-// mongoose.connect('mongodb://localhost/communitydb');
+// mongoose.connect('mongodb://mohabamroo:ghostrider1@ds139262.mlab.com:39262/reis-monrach');
+mongoose.connect('mongodb://localhost/reis');
 var db = mongoose.connection;
+global.mongoose = mongoose;
+
 var mailer = require('express-mailer');
 var app = express();
 
@@ -46,6 +48,7 @@ var usersApi = require('./routes/api/users');
 var postApi = require('./routes/api/posts');
 var albumApi = require('./routes/api/albums');
 var tripApi = require('./routes/api/trips');
+var stickersApi = require('./routes/api/stickers');
 
 app.set("views", path.resolve(__dirname, "views"));
 app.set("view engine", "ejs"); 
@@ -115,6 +118,7 @@ app.use('/api/users', usersApi);
 app.use('/api/posts', postApi);
 app.use('/api/albums', albumApi);
 app.use('/api/trips', tripApi);
+app.use('/api/stickers', stickersApi);
 
 app.listen(process.env.PORT||3000, function() {
  console.log("Express app started on port 3000.");
