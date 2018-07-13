@@ -1,3 +1,5 @@
+// This treats trips as a collection of albums
+// Old structure
 var express = require('express');
 var router = express.Router();
 var User = require('../../models/user');
@@ -13,7 +15,6 @@ var randomstring = require("randomstring");
 var jwt = require('jsonwebtoken');
 
 var printError = apiController.printError;
-var clientS3 = apiController.clientS3;
 var printResult = apiController.printResult;
 var ensureAdmin = apiController.ensureAdmin;
 var ensureAuthenticatedApi = apiController.ensureAuthenticatedApi;

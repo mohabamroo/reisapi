@@ -6,6 +6,7 @@ var fs = require('fs');
 var ejs = require("ejs");
 var publicPath = path.resolve(__dirname, "public");
 var cookieParser = require('cookie-parser');
+var morgan = require('morgan')
 var bodyParser = require('body-parser');
 var exphbs = require('express-handlebars');
 var expressValidator = require('express-validator');
@@ -29,6 +30,18 @@ var cfenv = require('cfenv');
 var mailer = require('express-mailer');
 var session = require('express-session');
 
+var morganInstance = morgan(function (tokens, req, res) {
+  return [
+    tokens.method(req, res),
+    tokens.url(req, res),
+    tokens.status(req, res),
+    tokens.res(req, res, 'content-length'), '-',
+    tokens['response-time'](req, res), 'ms'
+  ].join(' ')
+});
+
+app.use(morganInstance);
+
 mailer.extend(app, {
   from: 'communityguc@gmail.com',
   host: 'smtp.gmail.com', // hostname 
@@ -47,7 +60,9 @@ module.exports = app;
 var usersApi = require('./routes/api/users');
 var postApi = require('./routes/api/posts');
 var albumApi = require('./routes/api/albums');
-var tripApi = require('./routes/api/trips');
+// OLD controller
+// var tripApi = require('./routes/api/trips/albums');
+var tripPostsApi = require('./routes/api/trips_posts');
 var stickersApi = require('./routes/api/stickers');
 
 app.set("views", path.resolve(__dirname, "views"));
@@ -107,8 +122,8 @@ app.use(function (req, res, next) {
 // enable CROS
 app.all("/*", function (req, res, next) {
     res.header('Access-Control-Allow-Credentials', true);
-    res.header("Access-Control-Allow-Origin", "http://localhost:3000");
-    res.header("Access-Control-Allow-Methods", "GET, PUT, POST");
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Cache-Control, Pragma, Origin, Authorization, Content-Type, X-Requested-With, X-HTTP-Method-Override, Accept, X-Access-Token");
     return next();
 });
@@ -117,7 +132,7 @@ app.all("/*", function (req, res, next) {
 app.use('/api/users', usersApi);
 app.use('/api/posts', postApi);
 app.use('/api/albums', albumApi);
-app.use('/api/trips', tripApi);
+app.use('/api/trips', tripPostsApi);
 app.use('/api/stickers', stickersApi);
 
 app.listen(process.env.PORT||3000, function() {

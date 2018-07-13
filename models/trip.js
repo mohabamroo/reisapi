@@ -10,6 +10,10 @@ var tripSchema = mongoose.Schema({
 	title: {
 		type: String
 	},
+	posts: [ {
+		type: String,
+		ref: 'Post'
+	}],
 	public: {type: Boolean, default: true},
 	albums: [ {
 		type: String,

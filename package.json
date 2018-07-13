@@ -30,7 +30,7 @@
     "mongoose": "*",
     "mongoose-deep-populate": "^3.1.1",
     "mongoose-type-email": "^1.0.5",
-    "morgan": "~1.7.0",
+    "morgan": "^1.7.0",
     "multer": "1.1.0",
     "nodemon": "^1.11.0",
     "passport": "*",
