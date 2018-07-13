@@ -18,8 +18,8 @@ var userUploadsPath = path.resolve(__dirname, "user_uploads");
 var publicPath = path.join(__dirname, 'public');
 var mongo = require('mongodb');
 var mongoose = require('mongoose');
-// mongoose.connect('mongodb://mohabamroo:ghostrider1@ds139262.mlab.com:39262/reis-monrach');
-mongoose.connect('mongodb://localhost/reis');
+mongoose.connect('mongodb://mohabamroo:ghostrider1@ds139262.mlab.com:39262/reis-monrach');
+// mongoose.connect('mongodb://localhost/reis');
 var db = mongoose.connection;
 global.mongoose = mongoose;
 
