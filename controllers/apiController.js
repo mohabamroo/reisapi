@@ -18,13 +18,11 @@ var client = s3.createClient({
 		// See: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property
 	}
 });
-var clientS3 = client.s3;
 
-module.exports.clientS3 = clientS3;
 
 function printError(err, req, res) {
 	if (err) {
-		console.log(err);
+		// console.log(err);
 		res.status(400).json({
 			success: false,
 			errors: [err]

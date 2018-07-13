@@ -8,7 +8,7 @@ var Album = require('../../models/album');
 var Trip = require('../../models/trip');
 
 var apiController = require('../../controllers/apiController');
-var multer  = require('multer');
+var multer = require('multer');
 var mailer = require('express-mailer');
 var app = require('../../app.js');
 var randomstring = require("randomstring");
@@ -35,8 +35,8 @@ function createTrip(req, res, next) {
 		public: req.body.public || true,
 		albums: []
 	});
-	newTrip.save(function(err, trip) {
-		if(!printError(err, req, res)) {
+	newTrip.save(function (err, trip) {
+		if (!printError(err, req, res)) {
 			req.trip = trip;
 			next();
 		}
@@ -44,7 +44,7 @@ function createTrip(req, res, next) {
 }
 
 // create trip
-router.post('/create', ensureAuthenticatedApi, validateTrip, createTrip, validateAlbums, addAlbums, function(req, res) {
+router.post('/create', ensureAuthenticatedApi, validateTrip, createTrip, validateAlbums, addAlbums, function (req, res) {
 	res.status(200).json({
 		success: true,
 		data: req.trip
@@ -52,12 +52,16 @@ router.post('/create', ensureAuthenticatedApi, validateTrip, createTrip, validat
 });
 
 function checkTrip(req, res, next) {
-	Trip.findById(req.params.tripId).populate({path: 'albums'}).exec(function(err, trip) {
-		if(!printError(err, req, res)) {
-			if(trip==null ||!trip) {
+	Trip.findById(req.params.tripId).populate({
+		path: 'albums'
+	}).exec(function (err, trip) {
+		if (!printError(err, req, res)) {
+			if (trip == null || !trip) {
 				res.status(404).json({
 					success: false,
-					errors: [{"msg":"Trip not found!"}]
+					errors: [{
+						"msg": "Trip not found!"
+					}]
 				});
 			} else {
 				req.trip = trip;
@@ -68,12 +72,20 @@ function checkTrip(req, res, next) {
 }
 
 function getTrip(req, res, next) {
-	Trip.findById(req.params.tripId).populate({path: 'albums'}).populate({path: 'user'}).exec(function(err, trip) {
-		if(!printError(err, req, res)) {
-			if(trip==null ||!trip) {
+	Trip.findOne({
+		id: req.params.tripId
+	}).populate({
+		path: 'albums'
+	}).populate({
+		path: 'user'
+	}).exec(function (err, trip) {
+		if (!printError(err, req, res)) {
+			if (trip == null || !trip) {
 				res.status(404).json({
 					success: false,
-					errors: [{"msg":"Trip not found!"}]
+					errors: [{
+						"msg": "Trip not found!"
+					}]
 				});
 			} else {
 				trip.user.password = "";
@@ -81,17 +93,21 @@ function getTrip(req, res, next) {
 				req.trip = trip;
 				next();
 			}
+		} else {
+			console.log("sdkdskds")
 		}
 	});
 }
 
 function checkTripAbs(req, res, next) {
-	Trip.findById(req.params.tripId).exec(function(err, trip) {
-		if(!printError(err, req, res)) {
-			if(trip==null ||!trip) {
+	Trip.findById(req.params.tripId).exec(function (err, trip) {
+		if (!printError(err, req, res)) {
+			if (trip == null || !trip) {
 				res.status(404).json({
 					success: false,
-					errors: [{"msg":"Trip not found!"}]
+					errors: [{
+						"msg": "Trip not found!"
+					}]
 				});
 			} else {
 				req.trip = trip;
@@ -102,10 +118,12 @@ function checkTripAbs(req, res, next) {
 }
 
 function verifyPublicOrOwner(req, res, next) {
-	if(req.trip.public!=true && (!req.decoded || !req.decoded.user._id==req.trip.user)) {
+	if (req.trip.public != true && (!req.decoded || !req.decoded.user._id == req.trip.user)) {
 		res.status(403).json({
 			success: false,
-			errors: [{"msg":"Private Trip."}]
+			errors: [{
+				"msg": "Private Trip."
+			}]
 		});
 	} else {
 		next();
@@ -113,7 +131,7 @@ function verifyPublicOrOwner(req, res, next) {
 }
 
 // view trip
-router.get('/:tripId', getTrip, appendAuth, verifyPublicOrOwner, function(req, res) {
+router.get('/:tripId', ensureAuthenticatedApi, getTrip, appendAuth, verifyPublicOrOwner, function (req, res) {
 	res.status(200).json({
 		success: true,
 		data: req.trip
@@ -123,10 +141,12 @@ router.get('/:tripId', getTrip, appendAuth, verifyPublicOrOwner, function(req, r
 function verifyOwnership(req, res, next) {
 	userId = req.decoded.user._id;
 	tripUser = req.trip.user;
-	if(userId!=tripUser) {
+	if (userId != tripUser) {
 		res.status(403).json({
 			success: false,
-			errors: [{"msg": "Not owner of this trip."}]
+			errors: [{
+				"msg": "Not owner of this trip."
+			}]
 		});
 	} else {
 		next();
@@ -139,39 +159,43 @@ function validatePostsNotEmpty(req, res, next) {
 }
 
 function validateAlbums(req, res, next) {
-	if(!req.body.albums) {
+	if (!req.body.albums) {
 		return next();
 	}
 	albums = req.body.albums;
-	if(!Array.isArray(albums)) {
+	if (!Array.isArray(albums)) {
 		albums = [albums];
 	}
-	var limit =  albums.length;
+	var limit = albums.length;
 	var i = 0;
-	albums.forEach(function(albumId) {
+	albums.forEach(function (albumId) {
 		console.log(albumId);
-		if(req.trip.albums.indexOf(albumId) >= 0) {
+		if (req.trip.albums.indexOf(albumId) >= 0) {
 			res.status(400).json({
 				success: false,
-				errors: [{"msg":"Duplicate albums in trip."}]
+				errors: [{
+					"msg": "Duplicate albums in trip."
+				}]
 			});
 			return;
 		}
-		Album.findById(albumId, function(err, albumRes) {
-			if(req.error==true) {
+		Album.findById(albumId, function (err, albumRes) {
+			if (req.error == true) {
 				// returned error before, don't do anything
 				return;
 			}
-			if(!err && albumRes!=null) {
-				if(albumRes.user!=req.decoded.user._id) {
+			if (!err && albumRes != null) {
+				if (albumRes.user != req.decoded.user._id) {
 					req.error = true;
 					res.status(404).json({
 						success: false,
-						errors: [{"msg":"One or more album don't belong to you."}]
+						errors: [{
+							"msg": "One or more album don't belong to you."
+						}]
 					});
 				}
 				i++;
-				if(i==limit) {
+				if (i == limit) {
 					// all posts found
 					next();
 				}
@@ -179,7 +203,9 @@ function validateAlbums(req, res, next) {
 				req.error = true;
 				res.status(404).json({
 					success: false,
-					errors: [{"msg":"One (or more) album doesn't exist."}]
+					errors: [{
+						"msg": "One (or more) album doesn't exist."
+					}]
 				});
 			}
 		});
@@ -189,25 +215,34 @@ function validateAlbums(req, res, next) {
 }
 
 function addAlbums(req, res, next) {
-	if(!req.body.albums) {
+	if (!req.body.albums) {
 		return next();
 	}
-	Trip.findOneAndUpdate({_id: req.trip._id},
-		{$pushAll: {albums: req.albums}}, {new: true},
-	function(err, newTrip) {
-		if(!printError(err, req, res)) {
-			req.trip = newTrip;
-			next();
-		}
-	});
+	Trip.findOneAndUpdate({
+			_id: req.trip._id
+		}, {
+			$pushAll: {
+				albums: req.albums
+			}
+		}, {
+			new: true
+		},
+		function (err, newTrip) {
+			if (!printError(err, req, res)) {
+				req.trip = newTrip;
+				next();
+			}
+		});
 
-} 
+}
 
 function validateAlbumsNotEmpty(req, res, next) {
-	if(req.body.albums==null || req.body.albums==[]) {
+	if (req.body.albums == null || req.body.albums == []) {
 		res.status(400).json({
 			success: false,
-			errors: [{"msg":"No albums provided."}]
+			errors: [{
+				"msg": "No albums provided."
+			}]
 		});
 	} else {
 		next();
@@ -216,51 +251,63 @@ function validateAlbumsNotEmpty(req, res, next) {
 
 // add albums in trip
 router.post('/add/:tripId', ensureAuthenticatedApi, checkTripAbs,
-	verifyOwnership, validateAlbumsNotEmpty, validateAlbums, addAlbums, function(req, res) {
-	res.status(200).json({
-		success: true,
-		data: req.trip
+	verifyOwnership, validateAlbumsNotEmpty, validateAlbums, addAlbums,
+	function (req, res) {
+		res.status(200).json({
+			success: true,
+			data: req.trip
+		});
 	});
-});
 
 function removeAlbums(req, res, next) {
 	albums = req.body.albums;
-	if(!Array.isArray(albums)) {
+	if (!Array.isArray(albums)) {
 		albums = [albums];
 	}
-	Trip.findOneAndUpdate({_id: req.trip._id},
-		{$pullAll: {albums: albums}}, {new: true},
-	function(err, newTrip) {
-		if(!printError(err, req, res)) {
-			req.trip = newTrip;
-			next();
-		}
-	});
-} 
+	Trip.findOneAndUpdate({
+			_id: req.trip._id
+		}, {
+			$pullAll: {
+				albums: albums
+			}
+		}, {
+			new: true
+		},
+		function (err, newTrip) {
+			if (!printError(err, req, res)) {
+				req.trip = newTrip;
+				next();
+			}
+		});
+}
 
 // remove albums from trip
 router.post('/remove/:tripId', ensureAuthenticatedApi, checkTrip,
-	verifyOwnership, validateAlbumsNotEmpty, validateAlbums, removeAlbums, function(req, res) {
-	res.status(200).json({
-		success: true,
-		data: req.trip
+	verifyOwnership, validateAlbumsNotEmpty, validateAlbums, removeAlbums,
+	function (req, res) {
+		res.status(200).json({
+			success: true,
+			data: req.trip
+		});
 	});
-});
 
 function removeTrip(req, res, next) {
-	Album.remove({_id: req.trip._id}, function(err, removeRes) {
-		if(!printError(err, req, res)) {
+	Album.remove({
+		_id: req.trip._id
+	}, function (err, removeRes) {
+		if (!printError(err, req, res)) {
 			next();
 		}
 	});
 }
 
 router.post('/delete/:tripId', ensureAuthenticatedApi, checkTrip,
-	verifyOwnership, removeTrip, function(req, res) {
+	verifyOwnership, removeTrip,
+	function (req, res) {
 		res.status(200).json({
 			success: true,
 			msg: "Deleted Trip"
 		});
-});
+	});
 
 module.exports = router;

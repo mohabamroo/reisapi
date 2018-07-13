@@ -12,7 +12,6 @@ var randomstring = require("randomstring");
 var jwt = require('jsonwebtoken');
 
 var printError = apiController.printError;
-var clientS3 = apiController.clientS3;
 var printResult = apiController.printResult;
 var ensureAdmin = apiController.ensureAdmin;
 var ensureAuthenticatedApi = apiController.ensureAuthenticatedApi;

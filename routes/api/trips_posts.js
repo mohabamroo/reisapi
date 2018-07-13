@@ -134,8 +134,21 @@ function verifyPublicOrOwner(req, res, next) {
     }
 }
 
+function ensureTripIDFormat(req, res, next) {
+    console.log("hnaaaa")
+    if (req.params.tripId.match(/^[0-9a-fA-F]{24}$/)) {
+        console.log("eshtaaaaaaaaaaa")
+        // Yes, it's a valid ObjectId, proceed with `findById` call.
+        next()
+    } else {
+        res.status(400).json({
+            msg: "Invalid id format"
+        });
+    }
+}
+
 // view trip
-router.get('/:tripId', getTrip, appendAuth, verifyPublicOrOwner, function (req, res) {
+router.get('/:tripId', ensureAuthenticatedApi, ensureTripIDFormat, getTrip, appendAuth, verifyPublicOrOwner, function (req, res) {
     res.status(200).json({
         trip: req.trip
     });
