@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var User = require('../../models/user');
+var Trip = require('../../models/trip');
 
 var apiController = require('../../controllers/apiController');
 var mailer = require('express-mailer');
@@ -240,6 +241,7 @@ function modifyUserStickers(req, res, next) {
 		}
 	});
 }
+
 function validateStickersArray(req, res, next) {
 	req.checkBody('add', 'No stickers to add provided!').isArray();
 	req.checkBody('remove', 'No stickers to remove provided!').isArray();
@@ -267,14 +269,12 @@ router.put('/me/stickers', ensureAuthenticatedApi, fetchUser, validateStickersAr
 	});
 });
 
-// authenticated?
-router.get('/profile/:username', ensureAuthenticatedApi, function (req, res) {
+function fetchUserProfile(req, res, next) {
 	User.findOne({
 		username: req.params.username
 	}, {
 		password: 0,
-		verificationCode: 0,
-		_id: 0
+		verificationCode: 0
 	}).populate({
 		path: 'stickers'
 	}).exec(
@@ -294,9 +294,8 @@ router.get('/profile/:username', ensureAuthenticatedApi, function (req, res) {
 			var dude = resuser;
 			dude.age = Q4A;
 			if (resuser.public == true) {
-				res.status(200).json({
-					user: dude
-				});
+				req.user = dude;
+				next();
 			} else {
 				res.status(403).json({
 					msg: "Unauthorized",
@@ -306,6 +305,23 @@ router.get('/profile/:username', ensureAuthenticatedApi, function (req, res) {
 				});
 			}
 		});
+}
+
+function fetchUserTrips(req, res, next) {
+	Trip.find({user: req.user._id}).populate({path: 'posts', populate: {path: 'stickers'}}).exec(function(err, trips) {
+		if(!printError(err, req, res)) {
+			req.trips = trips;
+			next();
+		}
+	});
+}
+
+// authenticated?
+router.get('/profile/:username', ensureAuthenticatedApi, fetchUserProfile, fetchUserTrips, function (req, res) {
+	res.status(200).json({
+		user: req.user,
+		trips: req.trips
+	});
 
 });
 

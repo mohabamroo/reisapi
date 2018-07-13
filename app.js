@@ -1,24 +1,18 @@
 var express = require("express");
 var path = require("path");
-var http = require("http");
-var https = require('https');
-var fs = require('fs');
 var ejs = require("ejs");
 var publicPath = path.resolve(__dirname, "public");
 var cookieParser = require('cookie-parser');
 var morgan = require('morgan')
 var bodyParser = require('body-parser');
-var exphbs = require('express-handlebars');
 var expressValidator = require('express-validator');
 var session = require('express-session');
-var passport = require('passport');
-var LocalStrategy = require('passport-local').Strategy;
 var userUploadsPath = path.resolve(__dirname, "user_uploads");
 var publicPath = path.join(__dirname, 'public');
 var mongo = require('mongodb');
 var mongoose = require('mongoose');
-// mongoose.connect('mongodb://mohabamroo:ghostrider1@ds139262.mlab.com:39262/reis-monrach');
-mongoose.connect('mongodb://localhost/reis');
+mongoose.connect('mongodb://mohabamroo:ghostrider1@ds139262.mlab.com:39262/reis-monrach');
+// mongoose.connect('mongodb://localhost/reis');
 var db = mongoose.connection;
 global.mongoose = mongoose;
 
@@ -63,6 +57,7 @@ var albumApi = require('./routes/api/albums');
 // var tripApi = require('./routes/api/trips/albums');
 var tripPostsApi = require('./routes/api/trips_posts');
 var stickersApi = require('./routes/api/stickers');
+var timelineApi = require('./routes/api/timeline');
 
 app.set("views", path.resolve(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -91,9 +86,6 @@ app.use(session({
   saveUninitialized: true,
   resave: true
 }));
-
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Express Validator
 app.use(expressValidator({
@@ -137,9 +129,11 @@ app.use('/api/posts', postApi);
 app.use('/api/albums', albumApi);
 app.use('/api/trips', tripPostsApi);
 app.use('/api/stickers', stickersApi);
+app.use('/api/timeline', timelineApi);
 
-app.listen(process.env.PORT || 3000, function () {
-  console.log("Express app started on port 3000.");
+var port = process.env.PORT || 3000;
+app.listen(port, function () {
+  console.log("Reis app started on port:", port);
 });
 
 // get the app environment from Cloud Foundry
