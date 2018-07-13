@@ -24,7 +24,7 @@ function printError(err, req, res) {
 	if (err) {
 		// console.log(err);
 		res.status(400).json({
-			success: false,
+			msg: "Bad Request",
 			errors: [err]
 		});
 		res.end();
@@ -44,8 +44,7 @@ module.exports.ensureAuthenticatedApi = function (req, res, next) {
 	if (token) {
 		jwt.verify(token, 'ghostrider', function (err, decoded) {
 			if (err)
-				res.json({
-					success: false,
+				res.status(401).json({
 					msg: "Error decoding your token!"
 				});
 			else {
@@ -56,7 +55,6 @@ module.exports.ensureAuthenticatedApi = function (req, res, next) {
 		});
 	} else {
 		res.status(401).json({
-			success: false,
 			msg: "No token provided!"
 		});
 	}
@@ -67,8 +65,7 @@ function appendAuth(req, res, next) {
 	if (token) {
 		jwt.verify(token, 'ghostrider', function (err, decoded) {
 			if (err)
-				res.json({
-					success: false,
+				res.status(401).json({
 					msg: "Error decoding your token!"
 				});
 			else {
@@ -108,8 +105,7 @@ module.exports.newtoken = function (res, updatedUser) {
 	}, 'ghostrider', {
 		expiresIn: '1000h'
 	});
-	res.json({
-		success: true,
+	res.status(200).json({
 		token: token,
 		msg: "Updated profile!"
 	});
@@ -119,12 +115,12 @@ module.exports.validateErrors = function (req, res, next) {
 	errors = req.validationErrors();
 	if (errors) {
 		res.status(400).json({
-			success: false,
-			msg: "Please try again",
+			msg: "Bad request",
 			errors: errors
 		});
-	} else
+	} else {
 		next();
+	}
 }
 
 module.exports.removeDuplicates = function(arr) {

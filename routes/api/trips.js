@@ -45,8 +45,7 @@ function createTrip(req, res, next) {
 
 // create trip
 router.post('/create', ensureAuthenticatedApi, validateTrip, createTrip, validateAlbums, addAlbums, function (req, res) {
-	res.status(200).json({
-		success: true,
+	res.status(201).json({
 		data: req.trip
 	});
 });
@@ -58,7 +57,7 @@ function checkTrip(req, res, next) {
 		if (!printError(err, req, res)) {
 			if (trip == null || !trip) {
 				res.status(404).json({
-					success: false,
+					msg: "Trip not found",
 					errors: [{
 						"msg": "Trip not found!"
 					}]
@@ -82,7 +81,7 @@ function getTrip(req, res, next) {
 		if (!printError(err, req, res)) {
 			if (trip == null || !trip) {
 				res.status(404).json({
-					success: false,
+					msg: "Trip not found",
 					errors: [{
 						"msg": "Trip not found!"
 					}]
@@ -104,7 +103,7 @@ function checkTripAbs(req, res, next) {
 		if (!printError(err, req, res)) {
 			if (trip == null || !trip) {
 				res.status(404).json({
-					success: false,
+					msg: "Trip not found",
 					errors: [{
 						"msg": "Trip not found!"
 					}]
@@ -120,7 +119,7 @@ function checkTripAbs(req, res, next) {
 function verifyPublicOrOwner(req, res, next) {
 	if (req.trip.public != true && (!req.decoded || !req.decoded.user._id == req.trip.user)) {
 		res.status(403).json({
-			success: false,
+			msg: "Unauthorized",
 			errors: [{
 				"msg": "Private Trip."
 			}]
@@ -133,7 +132,6 @@ function verifyPublicOrOwner(req, res, next) {
 // view trip
 router.get('/:tripId', ensureAuthenticatedApi, getTrip, appendAuth, verifyPublicOrOwner, function (req, res) {
 	res.status(200).json({
-		success: true,
 		data: req.trip
 	});
 });
@@ -143,7 +141,7 @@ function verifyOwnership(req, res, next) {
 	tripUser = req.trip.user;
 	if (userId != tripUser) {
 		res.status(403).json({
-			success: false,
+			msg: "Unauthorized",
 			errors: [{
 				"msg": "Not owner of this trip."
 			}]
@@ -169,10 +167,9 @@ function validateAlbums(req, res, next) {
 	var limit = albums.length;
 	var i = 0;
 	albums.forEach(function (albumId) {
-		console.log(albumId);
 		if (req.trip.albums.indexOf(albumId) >= 0) {
 			res.status(400).json({
-				success: false,
+				msg: "Duplication",
 				errors: [{
 					"msg": "Duplicate albums in trip."
 				}]
@@ -188,7 +185,7 @@ function validateAlbums(req, res, next) {
 				if (albumRes.user != req.decoded.user._id) {
 					req.error = true;
 					res.status(404).json({
-						success: false,
+						msg: "Album not found",
 						errors: [{
 							"msg": "One or more album don't belong to you."
 						}]
@@ -202,7 +199,7 @@ function validateAlbums(req, res, next) {
 			} else {
 				req.error = true;
 				res.status(404).json({
-					success: false,
+					msg: "Album not found",
 					errors: [{
 						"msg": "One (or more) album doesn't exist."
 					}]
@@ -239,7 +236,7 @@ function addAlbums(req, res, next) {
 function validateAlbumsNotEmpty(req, res, next) {
 	if (req.body.albums == null || req.body.albums == []) {
 		res.status(400).json({
-			success: false,
+			msg: "Empty labums array",
 			errors: [{
 				"msg": "No albums provided."
 			}]
@@ -253,8 +250,7 @@ function validateAlbumsNotEmpty(req, res, next) {
 router.post('/add/:tripId', ensureAuthenticatedApi, checkTripAbs,
 	verifyOwnership, validateAlbumsNotEmpty, validateAlbums, addAlbums,
 	function (req, res) {
-		res.status(200).json({
-			success: true,
+		res.status(201).json({
 			data: req.trip
 		});
 	});
@@ -286,7 +282,6 @@ router.post('/remove/:tripId', ensureAuthenticatedApi, checkTrip,
 	verifyOwnership, validateAlbumsNotEmpty, validateAlbums, removeAlbums,
 	function (req, res) {
 		res.status(200).json({
-			success: true,
 			data: req.trip
 		});
 	});
@@ -304,8 +299,7 @@ function removeTrip(req, res, next) {
 router.post('/delete/:tripId', ensureAuthenticatedApi, checkTrip,
 	verifyOwnership, removeTrip,
 	function (req, res) {
-		res.status(200).json({
-			success: true,
+		res.status(204).json({
 			msg: "Deleted Trip"
 		});
 	});

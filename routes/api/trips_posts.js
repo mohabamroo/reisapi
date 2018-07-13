@@ -46,7 +46,6 @@ function createTrip(req, res, next) {
 
 router.post('/', ensureAuthenticatedApi, validateTrip, createTrip, validatePosts, addPosts, function (req, res) {
     res.status(201).json({
-        success: true,
         trip: req.trip
     });
 });
@@ -58,7 +57,6 @@ function checkTrip(req, res, next) {
         if (!printError(err, req, res)) {
             if (trip == null || !trip) {
                 res.status(404).json({
-                    success: false,
                     errors: [{
                         "msg": "Trip not found!"
                     }]
@@ -86,7 +84,6 @@ function getTrip(req, res, next) {
         if (!printError(err, req, res)) {
             if (trip == null || !trip) {
                 res.status(404).json({
-                    success: false,
                     errors: [{
                         "msg": "Trip not found!"
                     }]
@@ -108,7 +105,6 @@ function checkTripAbs(req, res, next) {
         if (!printError(err, req, res)) {
             if (trip == null || !trip) {
                 res.status(404).json({
-                    success: false,
                     errors: [{
                         "msg": "Trip not found!"
                     }]
@@ -124,7 +120,6 @@ function checkTripAbs(req, res, next) {
 function verifyPublicOrOwner(req, res, next) {
     if (req.trip.public != true && (!req.decoded || !req.decoded.user._id == req.trip.user)) {
         res.status(403).json({
-            success: false,
             errors: [{
                 "msg": "Private Trip."
             }]
@@ -157,11 +152,8 @@ router.get('/:tripId', ensureAuthenticatedApi, ensureTripIDFormat, getTrip, appe
 function verifyOwnership(req, res, next) {
     userId = req.decoded.user._id;
     tripUser = req.trip.user;
-    console.log(userId)
-    console.log(req.trip)
     if (userId != tripUser) {
         res.status(403).json({
-            success: false,
             errors: [{
                 "msg": "Not owner of this trip."
             }]
@@ -237,7 +229,6 @@ router.post('/:tripId/posts', ensureAuthenticatedApi, checkTripAbs,
     verifyOwnership, validatePosts, addPosts, populateTripPosts,
     function (req, res) {
         res.status(200).json({
-            success: true,
             trip: req.trip
         });
     });
@@ -261,7 +252,6 @@ router.delete('/:tripId/posts', ensureAuthenticatedApi, checkTripAbs,
     verifyOwnership, validatePosts, removePosts, populateTripPosts,
     function (req, res) {
         res.status(200).json({
-            success: true,
             data: req.trip
         });
     });
@@ -300,7 +290,6 @@ router.delete('/:tripId', ensureAuthenticatedApi, checkTripAbs,
     verifyOwnership, removeTrip,
     function (req, res) {
         res.status(200).json({
-            success: true,
             msg: "Deleted Trip"
         });
     });

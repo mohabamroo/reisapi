@@ -51,8 +51,7 @@ function validateNewPost(req, res, next) {
 }
 
 router.post('/', ensureAuthenticatedApi, validateNewPost, createNewPost, function (req, res) {
-	res.status(200).json({
-		success: true,
+	res.status(201).json({
 		msg: "Uploaded post.",
 		data: req.newPost
 	});
@@ -64,7 +63,7 @@ function checkPost(req, res, next) {
 		if (!printError(err, req, res)) {
 			if (post == null || !post) {
 				res.status(404).json({
-					success: false,
+					msg: "Post not found!",
 					errors: [{
 						"msg": "Post not found!"
 					}]
@@ -86,7 +85,7 @@ function getPost(req, res, next) {
 		if (!printError(err, req, res)) {
 			if (post == null || !post) {
 				res.status(404).json({
-					success: false,
+					msg: "Post not found!",
 					errors: [{
 						"msg": "Post not found!"
 					}]
@@ -106,7 +105,7 @@ function verifyOwnership(req, res, next) {
 	postUser = req.post.user;
 	if (userId != postUser) {
 		res.status(403).json({
-			success: false,
+			msg: "Unauthorized",
 			errors: [{
 				"msg": "Not owner of this post."
 			}]
@@ -128,8 +127,7 @@ function deletePost(req, res, next) {
 }
 
 router.delete('/:postId/', ensureAuthenticatedApi, checkPost, verifyOwnership, deletePost, function (req, res) {
-	res.status(200).json({
-		success: true,
+	res.status(204).json({
 		msg: "Deleted post."
 	});
 });
@@ -156,7 +154,6 @@ function updatePost(req, res, next) {
 
 router.put('/:postId/', ensureAuthenticatedApi, checkPost, verifyOwnership, updatePost, function (req, res) {
 	res.status(200).json({
-		success: true,
 		data: req.updatedPost,
 		msg: "Updated post."
 	});
@@ -165,7 +162,7 @@ router.put('/:postId/', ensureAuthenticatedApi, checkPost, verifyOwnership, upda
 function verifyPublicOrOwner(req, res, next) {
 	if (req.post.public != true && (!req.decoded || !req.decoded.user._id == req.post.user)) {
 		res.status(403).json({
-			success: false,
+			msg: "Unauthorized",
 			errors: [{
 				"msg": "Private post."
 			}]
@@ -177,7 +174,6 @@ function verifyPublicOrOwner(req, res, next) {
 
 router.get('/:postId', getPost, appendAuth, verifyPublicOrOwner, function (req, res) {
 	res.status(200).json({
-		success: true,
 		data: req.post
 	});
 });
@@ -242,7 +238,7 @@ function getUser(req, res, next) {
 				next();
 			} else {
 				res.status(404).json({
-					success: false,
+					msg: "User not found",
 					errors: [{
 						"msg": "User not found"
 					}]
@@ -297,7 +293,6 @@ function filterPosts(req, res, next) {
 
 router.get('/list/:username/:pageNumber', getUser, appendAuth, getUserPosts, filterPosts, function (req, res) {
 	res.status(200).json({
-		success: true,
 		data: {
 			posts: req.posts,
 			user: req.user
@@ -337,7 +332,6 @@ function getPosts(req, res, next) {
 
 router.get('/timeline/:pageNumber', ensureAuthenticatedApi, getPosts, function (req, res) {
 	res.status(200).json({
-		success: true,
 		posts: req.posts
 	});
 });

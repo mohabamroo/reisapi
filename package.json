@@ -10,7 +10,6 @@
     "bcryptjs": "*",
     "body-parser": "*",
     "cfenv": "^1.0.4",
-    "connect-flash": "*",
     "connect-multiparty": "^2.0.0",
     "cookie-parser": "^1.4.1",
     "debug": "~2.6.0",

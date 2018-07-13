@@ -78,8 +78,7 @@ function createPosts(req, res, next) {
 // removed: validate posts
 // added: createPosts
 router.post('/create', ensureAuthenticatedApi, validateAlbum, createAlbum, createPosts, addPosts, function(req, res) {
-	res.status(200).json({
-		success: true,
+	res.status(201).json({
 		data: req.album
 	});
 });
@@ -89,7 +88,6 @@ function checkAlbum(req, res, next) {
 		if(!printError(err, req, res)) {
 			if(album==null ||!album) {
 				res.status(404).json({
-					success: false,
 					errors: [{"msg":"Album not found!"}]
 				});
 			} else {
@@ -106,7 +104,7 @@ function getAlbum(req, res, next) {
 		if(!printError(err, req, res)) {
 			if(album==null ||!album) {
 				res.status(404).json({
-					success: false,
+					msg: "Album not found",
 					errors: [{"msg":"Album not found!"}]
 				});
 			} else {
@@ -124,7 +122,7 @@ function checkAlbumAbs(req, res, next) {
 		if(!printError(err, req, res)) {
 			if(album==null ||!album) {
 				res.status(404).json({
-					success: false,
+					msg: "Album not found",
 					errors: [{"msg":"Album not found!"}]
 				});
 			} else {
@@ -138,7 +136,7 @@ function checkAlbumAbs(req, res, next) {
 function verifyPublicOrOwner(req, res, next) {
 	if(req.album.public!=true && (!req.decoded || !req.decoded.user._id==req.post.user)) {
 		res.status(403).json({
-			success: false,
+			msg: "Unauthoried",
 			errors: [{"msg":"Private album."}]
 		});
 	} else {
@@ -148,7 +146,6 @@ function verifyPublicOrOwner(req, res, next) {
 
 router.get('/:albumId', getAlbum, appendAuth, verifyPublicOrOwner, function(req, res) {
 	res.status(200).json({
-		success: true,
 		data: req.album
 	});
 });
@@ -158,7 +155,7 @@ function verifyOwnership(req, res, next) {
 	albumUser = req.album.user;
 	if(userId!=albumUser) {
 		res.status(403).json({
-			success: false,
+			msg: "Unauthorized",
 			errors: [{"msg": "Not owner of this album."}]
 		});
 	} else {
@@ -184,7 +181,7 @@ function validatePosts(req, res, next) {
 	posts.forEach(function(postId) {
 		if(req.album.posts.indexOf(postId) >= 0) {
 			res.status(400).json({
-				success: false,
+				msg: "Unauthorized",
 				errors: [{"msg":"Duplicate posts in album."}]
 			});
 			return;
@@ -199,7 +196,7 @@ function validatePosts(req, res, next) {
 				if(postRes.user!=req.decoded.user._id) {
 					req.error = true;
 					res.status(404).json({
-						success: false,
+						msg: "Post not found",
 						errors: [{"msg":"One or more post don't belong to you."}]
 					});
 				}
@@ -211,7 +208,7 @@ function validatePosts(req, res, next) {
 			} else {
 				req.error = true;
 				res.status(404).json({
-					success: false,
+					msg: "Post not found",
 					errors: [{"msg":"One or more post doesn't exist."}]
 				});
 			}
@@ -238,7 +235,6 @@ function addPosts(req, res, next) {
 router.post('/add/:albumId', ensureAuthenticatedApi, checkAlbumAbs,
 	verifyOwnership, validatePostsNotEmpty, validatePosts, addPosts, function(req, res) {
 	res.status(200).json({
-		success: true,
 		data: req.newAlbum
 	});
 });
@@ -260,8 +256,7 @@ function removePosts(req, res, next) {
 
 router.post('/remove/:albumId', ensureAuthenticatedApi, checkAlbum,
 	verifyOwnership, validatePosts, removePosts, function(req, res) {
-	res.status(200).json({
-		success: true,
+	res.status(204).json({
 		data: req.newAlbum
 	});
 });
@@ -276,8 +271,7 @@ function removeAlbum(req, res, next) {
 
 router.post('/delete/:albumId', ensureAuthenticatedApi, checkAlbum,
 	verifyOwnership, removeAlbum, function(req, res) {
-		res.status(200).json({
-			success: true,
+		res.status(204).json({
 			msg: "Deleted album"
 		});
 });
