@@ -21,11 +21,11 @@ function getUserStickers(req, res, next) {
 
 function fetchTimelinePosts(req, res, next) {
     Post.find({
-        stickers: {
+        "stickers": {
             "$in": req.decoded.user.stickers
         },
         user: {
-            '"$ne': req.decoded.user._id
+            '$ne': req.decoded.user._id
         }
     }, null, {
         sort: {
