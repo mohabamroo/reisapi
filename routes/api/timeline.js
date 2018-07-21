@@ -24,6 +24,9 @@ function fetchTimelinePosts(req, res, next) {
         stickers: {
             "$in": req.decoded.user.stickers
         },
+        user: {
+            '"$ne': req.decoded.user._id
+        }
     }, null, {
         sort: {
             created: -1
