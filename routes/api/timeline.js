@@ -13,6 +13,7 @@ function getUserStickers(req, res, next) {
         req.decoded.user._id,
         function (err, user) {
             if (!printError(err, req, res)) {
+                req.decoded.user = user;
                 next();
             }
         });
