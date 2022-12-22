@@ -23,7 +23,7 @@
     "express-validator": "*",
     "filereader": "^0.10.3",
     "inspect": "0.0.2",
-    "jsonwebtoken": "^7.4.1",
+    "jsonwebtoken": "^9.0.0",
     "mongodb": "*",
     "mongoosastic": "^4.3.0",
     "mongoose": "*",
